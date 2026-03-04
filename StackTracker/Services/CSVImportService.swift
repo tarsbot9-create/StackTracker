@@ -503,13 +503,15 @@ final class CSVImportService {
         var currentField = ""
         var inQuotes = false
 
-        for char in content {
-            if char == "\"" {
+        // Use unicodeScalars to avoid Swift's Character grapheme clustering
+        // which merges \r\n into a single Character
+        for scalar in content.unicodeScalars {
+            if scalar == "\"" {
                 inQuotes.toggle()
-            } else if char == "," && !inQuotes {
+            } else if scalar == "," && !inQuotes {
                 currentRow.append(currentField)
                 currentField = ""
-            } else if (char == "\n" || char == "\r") && !inQuotes {
+            } else if (scalar == "\n" || scalar == "\r") && !inQuotes {
                 if !currentField.isEmpty || !currentRow.isEmpty {
                     currentRow.append(currentField)
                     rows.append(currentRow)
@@ -517,7 +519,7 @@ final class CSVImportService {
                     currentField = ""
                 }
             } else {
-                currentField.append(char)
+                currentField.append(Character(scalar))
             }
         }
 
