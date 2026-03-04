@@ -267,11 +267,26 @@ struct CSVImportView: View {
         switch result {
         case .success(let urls):
             guard let url = urls.first else { return }
+
+            // Read file data immediately while we have security-scoped access
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+
+            guard let data = try? Data(contentsOf: url),
+                  let content = String(data: data, encoding: .utf8)
+                        ?? String(data: data, encoding: .ascii)
+                        ?? String(data: data, encoding: .isoLatin1),
+                  !content.isEmpty else {
+                errorMessage = "Could not read the file. Try copying it to 'On My iPhone' in Files first."
+                showError = true
+                return
+            }
+
             do {
                 let dupInfos = existingPurchases.map {
                     DuplicateInfo(date: $0.date, btcAmount: $0.btcAmount, usdSpent: $0.usdSpent)
                 }
-                let parsed = try CSVImportService.parseCSV(from: url, existingPurchases: dupInfos)
+                let parsed = try CSVImportService.parseCSVContent(content, existingPurchases: dupInfos)
                 if parsed.purchases.isEmpty {
                     errorMessage = "No valid BTC purchases found in this file."
                     showError = true
