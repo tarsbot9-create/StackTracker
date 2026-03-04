@@ -1,6 +1,34 @@
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
+import UIKit
+
+// MARK: - Document Picker (copies file into app sandbox)
+
+struct DocumentPicker: UIViewControllerRepresentable {
+    var onPick: (URL) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.commaSeparatedText, .plainText], asCopy: true)
+        picker.delegate = context.coordinator
+        picker.allowsMultipleSelection = false
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+
+    class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onPick: (URL) -> Void
+        init(onPick: @escaping (URL) -> Void) { self.onPick = onPick }
+
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            guard let url = urls.first else { return }
+            onPick(url)
+        }
+    }
+}
 
 struct CSVImportView: View {
     @Environment(\.modelContext) private var context
@@ -41,12 +69,10 @@ struct CSVImportView: View {
                     }
                 }
             }
-            .fileImporter(
-                isPresented: $showFilePicker,
-                allowedContentTypes: [UTType.commaSeparatedText, UTType.plainText],
-                allowsMultipleSelection: false
-            ) { result in
-                handleFileSelection(result)
+            .sheet(isPresented: $showFilePicker) {
+                DocumentPicker { url in
+                    handlePickedFile(url)
+                }
             }
             .alert("Import Error", isPresented: $showError) {
                 Button("OK") {}
@@ -263,42 +289,36 @@ struct CSVImportView: View {
         }
     }
 
-    private func handleFileSelection(_ result: Result<[URL], Error>) {
-        switch result {
-        case .success(let urls):
-            guard let url = urls.first else { return }
+    private func handlePickedFile(_ url: URL) {
+        // asCopy: true means the file is already copied into our tmp directory -- full access
+        guard let data = try? Data(contentsOf: url) else {
+            errorMessage = "Could not read the file."
+            showError = true
+            return
+        }
 
-            // Read file data immediately while we have security-scoped access
-            let accessing = url.startAccessingSecurityScopedResource()
-            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        guard let content = String(data: data, encoding: .utf8)
+                ?? String(data: data, encoding: .ascii)
+                ?? String(data: data, encoding: .isoLatin1),
+              !content.isEmpty else {
+            errorMessage = "File appears to be empty or unreadable."
+            showError = true
+            return
+        }
 
-            guard let data = try? Data(contentsOf: url),
-                  let content = String(data: data, encoding: .utf8)
-                        ?? String(data: data, encoding: .ascii)
-                        ?? String(data: data, encoding: .isoLatin1),
-                  !content.isEmpty else {
-                errorMessage = "Could not read the file. Try copying it to 'On My iPhone' in Files first."
-                showError = true
-                return
+        do {
+            let dupInfos = existingPurchases.map {
+                DuplicateInfo(date: $0.date, btcAmount: $0.btcAmount, usdSpent: $0.usdSpent)
             }
-
-            do {
-                let dupInfos = existingPurchases.map {
-                    DuplicateInfo(date: $0.date, btcAmount: $0.btcAmount, usdSpent: $0.usdSpent)
-                }
-                let parsed = try CSVImportService.parseCSVContent(content, existingPurchases: dupInfos)
-                if parsed.purchases.isEmpty {
-                    errorMessage = "No valid BTC purchases found in this file."
-                    showError = true
-                } else {
-                    importResult = parsed
-                    parsedPurchases = parsed.purchases
-                }
-            } catch {
-                errorMessage = error.localizedDescription
+            let parsed = try CSVImportService.parseCSVContent(content, existingPurchases: dupInfos)
+            if parsed.purchases.isEmpty {
+                errorMessage = "No valid BTC purchases found in this file."
                 showError = true
+            } else {
+                importResult = parsed
+                parsedPurchases = parsed.purchases
             }
-        case .failure(let error):
+        } catch {
             errorMessage = error.localizedDescription
             showError = true
         }
