@@ -51,7 +51,28 @@ final class CSVImportService {
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
 
-        let content = try String(contentsOf: url, encoding: .utf8)
+        // Try multiple encodings and coordinate file access
+        var content: String?
+        var readError: Error?
+
+        let coordinator = NSFileCoordinator()
+        var coordError: NSError?
+        coordinator.coordinate(readingItemAt: url, options: [], error: &coordError) { readURL in
+            if let data = try? Data(contentsOf: readURL) {
+                content = String(data: data, encoding: .utf8)
+                    ?? String(data: data, encoding: .ascii)
+                    ?? String(data: data, encoding: .isoLatin1)
+            }
+        }
+
+        if content == nil || content?.isEmpty == true {
+            // Fallback: try direct read
+            content = try? String(contentsOf: url, encoding: .utf8)
+        }
+
+        guard let content = content, !content.isEmpty else {
+            throw ImportError.emptyFile
+        }
         let rows = parseRows(content)
 
         guard rows.count > 1 else {
@@ -109,11 +130,11 @@ final class CSVImportService {
             return .coinbase
         }
 
-        // Cash App: "transaction id", "date", "transaction type", "currency", "amount", "asset type", "asset amount"
-        if joined.contains("asset type") && joined.contains("asset amount") {
+        // Cash App: "date", "transaction id", "transaction type", "currency", "amount", "asset type", "asset price", "asset amount"
+        if joined.contains("asset type") && joined.contains("asset amount") && joined.contains("asset price") {
             return .cashApp
         }
-        if joined.contains("transaction id") && joined.contains("asset") {
+        if joined.contains("transaction id") && joined.contains("asset type") {
             return .cashApp
         }
 
@@ -220,8 +241,14 @@ final class CSVImportService {
         }
 
         let txType = get("transaction type")?.lowercased() ?? ""
-        guard txType.contains("bitcoin buy") || txType.contains("bitcoin purchase") || txType == "buy" else {
+        guard txType.contains("bitcoin") && (txType.contains("buy") || txType.contains("purchase")) else {
             throw ImportError.skippedRow("Not a BTC buy: \(txType)")
+        }
+
+        // Verify asset type is BTC
+        let assetType = get("asset type")?.uppercased() ?? ""
+        guard assetType == "BTC" || assetType == "BITCOIN" || assetType.isEmpty else {
+            throw ImportError.skippedRow("Not BTC: \(assetType)")
         }
 
         guard let dateStr = get("date"),
@@ -229,21 +256,29 @@ final class CSVImportService {
             throw ImportError.skippedRow("No valid date")
         }
 
-        let btcAmount = abs(parseDouble(get("asset amount") ?? get("btc amount") ?? "0"))
-        let usdAmount = abs(parseDouble(get("amount") ?? get("usd amount") ?? "0"))
+        let btcAmount = abs(parseDouble(get("asset amount") ?? "0"))
+        let usdAmount = abs(parseDouble(get("amount") ?? get("net amount") ?? "0"))
+        let assetPrice = parseDouble(get("asset price") ?? "0")
 
         guard btcAmount > 0 else {
             throw ImportError.skippedRow("No BTC amount")
         }
 
-        let price = usdAmount > 0 && btcAmount > 0 ? usdAmount / btcAmount : 0
-        guard price > 0 else {
+        // Use asset price directly if available, otherwise derive from USD/BTC
+        let price: Double
+        if assetPrice > 0 {
+            price = assetPrice
+        } else if usdAmount > 0 && btcAmount > 0 {
+            price = usdAmount / btcAmount
+        } else {
             throw ImportError.skippedRow("Could not determine price")
         }
 
+        let finalUSD = usdAmount > 0 ? usdAmount : btcAmount * price
+
         return ParsedPurchase(
             date: date, btcAmount: btcAmount, pricePerBTC: price,
-            usdSpent: usdAmount, walletName: "Cash App", notes: "Imported from Cash App"
+            usdSpent: finalUSD, walletName: "Cash App", notes: "Imported from Cash App"
         )
     }
 
@@ -456,6 +491,7 @@ final class CSVImportService {
             "yyyy-MM-dd'T'HH:mm:ssZ",
             "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
             "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss zzz",
             "yyyy-MM-dd HH:mm:ss",
             "yyyy-MM-dd",
             "MM/dd/yyyy HH:mm:ss",
@@ -488,11 +524,17 @@ final class CSVImportService {
     // MARK: - Number Parsing
 
     private static func parseDouble(_ string: String) -> Double {
-        let clean = string
+        var clean = string
             .replacingOccurrences(of: "$", with: "")
             .replacingOccurrences(of: ",", with: "")
             .replacingOccurrences(of: " ", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Handle parentheses for negative numbers: ($15.00) -> -15.00
+        if clean.hasPrefix("(") && clean.hasSuffix(")") {
+            clean = "-" + clean.dropFirst().dropLast()
+        }
+
         return Double(clean) ?? 0
     }
 }
