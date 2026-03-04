@@ -170,7 +170,10 @@ struct CSVImportView: View {
                             Text("Detected: \(result.platform.rawValue)")
                                 .font(.headline)
                                 .foregroundColor(Theme.bitcoinOrange)
-                            Text("\(parsedPurchases.count) purchases found")
+                            let buyCount = parsedPurchases.filter { $0.transactionType == .buy }.count
+                            let sellCount = parsedPurchases.filter { $0.transactionType == .sell || $0.transactionType == .payment }.count
+                            let xferCount = parsedPurchases.filter { $0.transactionType == .withdrawal }.count
+                            Text("\(buyCount) buys\(sellCount > 0 ? ", \(sellCount) sells" : "")\(xferCount > 0 ? ", \(xferCount) transfers" : "")")
                                 .font(.subheadline)
                                 .foregroundColor(Theme.textSecondary)
                         }
@@ -239,6 +242,33 @@ struct CSVImportView: View {
                         .font(.subheadline.bold())
                         .foregroundColor(Theme.textPrimary)
 
+                    // Transaction type badge
+                    if purchase.transactionType == .sell {
+                        Text("SELL")
+                            .font(.caption2.bold())
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Theme.lossRed)
+                            .cornerRadius(4)
+                    } else if purchase.transactionType == .withdrawal {
+                        Text("TRANSFER")
+                            .font(.caption2.bold())
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.blue)
+                            .cornerRadius(4)
+                    } else if purchase.transactionType == .payment {
+                        Text("SPENT")
+                            .font(.caption2.bold())
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.purple)
+                            .cornerRadius(4)
+                    }
+
                     if purchase.isDuplicate {
                         Text("DUPLICATE")
                             .font(.caption2.bold())
@@ -251,18 +281,23 @@ struct CSVImportView: View {
                 }
 
                 HStack(spacing: 16) {
-                    Text("\(purchase.btcAmount, specifier: "%.8f") BTC")
+                    let prefix = purchase.transactionType == .buy ? "+" : "-"
+                    Text("\(prefix)\(purchase.btcAmount, specifier: "%.8f") BTC")
                         .font(.caption)
-                        .foregroundColor(Theme.bitcoinOrange)
+                        .foregroundColor(purchase.transactionType == .buy ? Theme.bitcoinOrange : Theme.lossRed)
 
-                    Text("$\(purchase.usdSpent, specifier: "%.2f")")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
+                    if purchase.usdSpent > 0 {
+                        Text("$\(purchase.usdSpent, specifier: "%.2f")")
+                            .font(.caption)
+                            .foregroundColor(Theme.textSecondary)
+                    }
                 }
 
-                Text("@ $\(purchase.pricePerBTC, specifier: "%.0f") per BTC")
-                    .font(.caption2)
-                    .foregroundColor(Theme.textSecondary)
+                if purchase.pricePerBTC > 0 {
+                    Text("@ $\(purchase.pricePerBTC, specifier: "%.0f") per BTC")
+                        .font(.caption2)
+                        .foregroundColor(Theme.textSecondary)
+                }
             }
 
             Spacer()
@@ -336,7 +371,8 @@ struct CSVImportView: View {
                 btcAmount: p.btcAmount,
                 pricePerBTC: p.pricePerBTC,
                 walletName: p.walletName,
-                notes: p.notes
+                notes: p.notes,
+                transactionType: p.transactionType
             )
             context.insert(purchase)
         }

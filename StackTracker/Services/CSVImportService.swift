@@ -22,6 +22,7 @@ struct ParsedPurchase: Identifiable, Hashable {
     var usdSpent: Double
     var walletName: String
     var notes: String
+    var transactionType: TransactionType = .buy
     var isSelected: Bool = true
     var isDuplicate: Bool = false
 
@@ -242,10 +243,18 @@ final class CSVImportService {
             return row[i].trimmingCharacters(in: .whitespaces)
         }
 
-        // Only import buys
         let txType = get("transaction type")?.lowercased() ?? ""
-        guard txType.contains("buy") || txType.contains("receive") || txType.contains("advance trade buy") else {
-            throw ImportError.skippedRow("Not a buy transaction: \(txType)")
+
+        // Determine transaction category
+        let txCategory: TransactionType
+        if txType.contains("buy") || txType.contains("receive") || txType.contains("advance trade buy") {
+            txCategory = .buy
+        } else if txType.contains("sell") || txType.contains("advance trade sell") {
+            txCategory = .sell
+        } else if txType.contains("send") {
+            txCategory = .withdrawal
+        } else {
+            throw ImportError.skippedRow("Not a relevant transaction: \(txType)")
         }
 
         // Only BTC
@@ -274,9 +283,11 @@ final class CSVImportService {
             throw ImportError.skippedRow("Could not determine price")
         }
 
+        let label = txCategory == .buy ? "Buy" : txCategory == .sell ? "Sell" : "Withdrawal"
         return ParsedPurchase(
             date: date, btcAmount: quantity, pricePerBTC: price,
-            usdSpent: usd, walletName: "Coinbase", notes: "Imported from Coinbase"
+            usdSpent: usd, walletName: "Coinbase", notes: "Coinbase \(label)",
+            transactionType: txCategory
         )
     }
 
@@ -289,8 +300,31 @@ final class CSVImportService {
         }
 
         let txType = get("transaction type")?.lowercased() ?? ""
-        guard txType.contains("bitcoin") && (txType.contains("buy") || txType.contains("purchase")) else {
-            throw ImportError.skippedRow("Not a BTC buy: \(txType)")
+        let status = get("status")?.lowercased() ?? ""
+
+        // Skip canceled/failed transactions
+        guard status == "complete" else {
+            throw ImportError.skippedRow("Transaction not complete: \(status)")
+        }
+
+        // Determine transaction type
+        let txCategory: TransactionType
+        let txLabel: String
+
+        if txType.contains("bitcoin") && (txType.contains("buy") || txType.contains("recurring buy")) {
+            txCategory = .buy
+            txLabel = "Buy"
+        } else if txType.contains("bitcoin") && txType.contains("sell") {
+            txCategory = .sell
+            txLabel = "Sell"
+        } else if txType.contains("bitcoin") && txType.contains("withdrawal") {
+            txCategory = .withdrawal
+            txLabel = "Withdrawal"
+        } else if txType.contains("bitcoin") && txType.contains("payment") {
+            txCategory = .payment
+            txLabel = "Payment"
+        } else {
+            throw ImportError.skippedRow("Not a BTC transaction: \(txType)")
         }
 
         // Verify asset type is BTC
@@ -309,7 +343,7 @@ final class CSVImportService {
         let assetPrice = parseDouble(get("asset price") ?? "0")
 
         // Fallback: parse BTC amount from Notes field (older Cash App exports)
-        // e.g. "purchase of BTC 0.00085556"
+        // e.g. "purchase of BTC 0.00085556" or "sale of BTC 0.00043260"
         if btcAmount == 0 {
             let notes = get("notes") ?? ""
             if let range = notes.range(of: "BTC ") {
@@ -318,16 +352,23 @@ final class CSVImportService {
             }
         }
 
+        // For withdrawals, BTC amount might be in the Amount column directly
+        if btcAmount == 0 && txCategory == .withdrawal {
+            btcAmount = abs(parseDouble(get("amount") ?? "0"))
+        }
+
         guard btcAmount > 0 else {
             throw ImportError.skippedRow("No BTC amount")
         }
 
-        // Use asset price directly if available, otherwise derive from USD/BTC
+        // Determine price
         let price: Double
         if assetPrice > 0 {
             price = assetPrice
-        } else if usdAmount > 0 && btcAmount > 0 {
+        } else if usdAmount > 0 && btcAmount > 0 && txCategory != .withdrawal {
             price = usdAmount / btcAmount
+        } else if txCategory == .withdrawal {
+            price = 0 // Price not relevant for transfers
         } else {
             throw ImportError.skippedRow("Could not determine price")
         }
@@ -336,7 +377,9 @@ final class CSVImportService {
 
         return ParsedPurchase(
             date: date, btcAmount: btcAmount, pricePerBTC: price,
-            usdSpent: finalUSD, walletName: "Cash App", notes: "Imported from Cash App"
+            usdSpent: finalUSD, walletName: "Cash App",
+            notes: "Cash App \(txLabel)",
+            transactionType: txCategory
         )
     }
 

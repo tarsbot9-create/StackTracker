@@ -10,6 +10,9 @@ struct PortfolioSummary {
     let totalPLPercent: Double
     let averageCostBasis: Double
     let purchaseCount: Int
+    let sellCount: Int
+    let withdrawalCount: Int
+    let realizedPL: Double
     let dcaStreak: Int
     let firstPurchaseDate: Date?
 
@@ -22,28 +25,59 @@ struct PortfolioCalculator {
             return PortfolioSummary(
                 totalBTC: 0, totalSats: 0, totalInvested: 0,
                 currentValue: 0, totalPL: 0, totalPLPercent: 0,
-                averageCostBasis: 0, purchaseCount: 0, dcaStreak: 0,
-                firstPurchaseDate: nil
+                averageCostBasis: 0, purchaseCount: 0,
+                sellCount: 0, withdrawalCount: 0, realizedPL: 0,
+                dcaStreak: 0, firstPurchaseDate: nil
             )
         }
 
-        let totalBTC = purchases.reduce(0) { $0 + $1.btcAmount }
-        let totalInvested = purchases.reduce(0) { $0 + $1.usdSpent }
-        let currentValue = totalBTC * currentPrice
-        let totalPL = currentValue - totalInvested
-        let totalPLPercent = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0
-        let averageCostBasis = totalBTC > 0 ? totalInvested / totalBTC : 0
-        let sorted = purchases.sorted { $0.date < $1.date }
+        let buys = purchases.filter { $0.isStackPositive }
+        let sells = purchases.filter { $0.isStackNegative }
+        let withdrawals = purchases.filter { $0.isTransfer }
+
+        // Total BTC on exchanges = buys - sells/payments - withdrawals
+        let boughtBTC = buys.reduce(0.0) { $0 + $1.btcAmount }
+        let soldBTC = sells.reduce(0.0) { $0 + $1.btcAmount }
+        let withdrawnBTC = withdrawals.reduce(0.0) { $0 + $1.btcAmount }
+
+        // Stack = bought - sold - withdrawn (withdrawn is on cold storage, tracked separately)
+        let exchangeStackBTC = max(0, boughtBTC - soldBTC - withdrawnBTC)
+
+        // Total invested = money in - money out from sells
+        let totalBought = buys.reduce(0.0) { $0 + $1.usdSpent }
+        let totalSold = sells.reduce(0.0) { $0 + $1.usdSpent }
+
+        // Net invested (cost basis for remaining stack)
+        let netInvested = totalBought - totalSold
+
+        // Realized P&L from sells
+        let avgBuyCost = boughtBTC > 0 ? totalBought / boughtBTC : 0
+        let realizedPL = sells.reduce(0.0) { total, sell in
+            let sellRevenue = sell.btcAmount * sell.pricePerBTC
+            let costOfSold = sell.btcAmount * avgBuyCost
+            return total + (sellRevenue - costOfSold)
+        }
+
+        // Current value of remaining exchange stack
+        let currentValue = exchangeStackBTC * currentPrice
+        let unrealizedPL = currentValue - (exchangeStackBTC * avgBuyCost)
+        let totalPL = unrealizedPL + realizedPL
+        let totalPLPercent = netInvested > 0 ? (totalPL / netInvested) * 100 : 0
+
+        let sorted = buys.sorted { $0.date < $1.date }
 
         return PortfolioSummary(
-            totalBTC: totalBTC,
-            totalSats: Int(totalBTC * 100_000_000),
-            totalInvested: totalInvested,
+            totalBTC: exchangeStackBTC,
+            totalSats: Int(exchangeStackBTC * 100_000_000),
+            totalInvested: netInvested,
             currentValue: currentValue,
             totalPL: totalPL,
             totalPLPercent: totalPLPercent,
-            averageCostBasis: averageCostBasis,
-            purchaseCount: purchases.count,
+            averageCostBasis: avgBuyCost,
+            purchaseCount: buys.count,
+            sellCount: sells.count,
+            withdrawalCount: withdrawals.count,
+            realizedPL: realizedPL,
             dcaStreak: calculateStreak(purchases: sorted),
             firstPurchaseDate: sorted.first?.date
         )
