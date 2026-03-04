@@ -9,6 +9,7 @@ struct SettingsView: View {
     @AppStorage("currency") private var currency = "USD"
 
     @State private var showExportSheet = false
+    @State private var showImportSheet = false
     @State private var showDeleteAlert = false
     @State private var csvURL: URL?
 
@@ -31,6 +32,12 @@ struct SettingsView: View {
                 }
 
                 Section("Data") {
+                    Button {
+                        showImportSheet = true
+                    } label: {
+                        Label("Import from CSV", systemImage: "square.and.arrow.down")
+                    }
+
                     Button {
                         exportCSV()
                     } label: {
@@ -98,6 +105,9 @@ struct SettingsView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("This will permanently delete all your purchase history. This cannot be undone.")
+            }
+            .sheet(isPresented: $showImportSheet) {
+                CSVImportView()
             }
             .sheet(isPresented: $showExportSheet) {
                 if let url = csvURL {
