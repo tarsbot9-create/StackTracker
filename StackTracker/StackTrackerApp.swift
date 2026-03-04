@@ -7,7 +7,7 @@ struct StackTrackerApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: [Purchase.self, PriceCache.self])
+        .modelContainer(for: [Purchase.self, PriceCache.self, WatchedAddress.self, AddressTransaction.self])
     }
 }
 
@@ -29,9 +29,9 @@ struct ContentView: View {
                     Label("Add", systemImage: "plus.circle.fill")
                 }
 
-            DCAAnalyticsView()
+            AddressListView()
                 .tabItem {
-                    Label("Analytics", systemImage: "chart.bar.fill")
+                    Label("Addresses", systemImage: "lock.shield")
                 }
 
             SettingsView()

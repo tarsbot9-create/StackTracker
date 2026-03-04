@@ -26,6 +26,11 @@
 		A10017 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10017; };
 		A10018 /* CSVImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10018; };
 		A10019 /* CSVImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10019; };
+		A10020 /* WatchedAddress.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10020; };
+		A10021 /* BlockchainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10021; };
+		A10022 /* AddressListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022; };
+		A10023 /* AddAddressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10023; };
+		A10024 /* AddressDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +54,11 @@
 		B10017 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10018 /* CSVImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImportService.swift; sourceTree = "<group>"; };
 		B10019 /* CSVImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImportView.swift; sourceTree = "<group>"; };
+		B10020 /* WatchedAddress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedAddress.swift; sourceTree = "<group>"; };
+		B10021 /* BlockchainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockchainService.swift; sourceTree = "<group>"; };
+		B10022 /* AddressListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressListView.swift; sourceTree = "<group>"; };
+		B10023 /* AddAddressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddAddressView.swift; sourceTree = "<group>"; };
+		B10024 /* AddressDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,6 +99,7 @@
 			children = (
 				B10002 /* Purchase.swift */,
 				B10003 /* PriceCache.swift */,
+			B10020 /* WatchedAddress.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -99,6 +110,7 @@
 				B10004 /* PriceService.swift */,
 				B10005 /* PortfolioCalculator.swift */,
 			B10018 /* CSVImportService.swift */,
+			B10021 /* BlockchainService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -129,6 +141,7 @@
 				E10084 /* Milestones */,
 				E10085 /* Settings */,
 				E10086 /* Import */,
+				E10087 /* Addresses */,
 				E10009 /* Components */,
 			);
 			path = Views;
@@ -172,6 +185,16 @@
 				B10012 /* MilestonesView.swift */,
 			);
 			path = Milestones;
+			sourceTree = "<group>";
+		};
+		E10087 /* Addresses */ = {
+			isa = PBXGroup;
+			children = (
+				B10022 /* AddressListView.swift */,
+				B10023 /* AddAddressView.swift */,
+				B10024 /* AddressDetailView.swift */,
+			);
+			path = Addresses;
 			sourceTree = "<group>";
 		};
 		E10086 /* Import */ = {
@@ -295,6 +318,11 @@
 				A10016 /* StatCard.swift in Sources */,
 				A10018 /* CSVImportService.swift in Sources */,
 				A10019 /* CSVImportView.swift in Sources */,
+				A10020 /* WatchedAddress.swift in Sources */,
+				A10021 /* BlockchainService.swift in Sources */,
+				A10022 /* AddressListView.swift in Sources */,
+				A10023 /* AddAddressView.swift in Sources */,
+				A10024 /* AddressDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
