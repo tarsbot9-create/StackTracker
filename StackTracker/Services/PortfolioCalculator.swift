@@ -2,8 +2,10 @@ import Foundation
 import SwiftData
 
 struct PortfolioSummary {
-    let totalBTC: Double
+    let totalBTC: Double          // total stack (exchange + cold storage)
     let totalSats: Int
+    let exchangeBTC: Double       // BTC still on exchanges
+    let coldStorageBTC: Double    // BTC withdrawn to cold storage
     let totalInvested: Double
     let currentValue: Double
     let totalPL: Double
@@ -23,8 +25,8 @@ struct PortfolioCalculator {
     static func summary(purchases: [Purchase], currentPrice: Double) -> PortfolioSummary {
         guard !purchases.isEmpty else {
             return PortfolioSummary(
-                totalBTC: 0, totalSats: 0, totalInvested: 0,
-                currentValue: 0, totalPL: 0, totalPLPercent: 0,
+                totalBTC: 0, totalSats: 0, exchangeBTC: 0, coldStorageBTC: 0,
+                totalInvested: 0, currentValue: 0, totalPL: 0, totalPLPercent: 0,
                 averageCostBasis: 0, purchaseCount: 0,
                 sellCount: 0, withdrawalCount: 0, realizedPL: 0,
                 dcaStreak: 0, firstPurchaseDate: nil
@@ -35,40 +37,45 @@ struct PortfolioCalculator {
         let sells = purchases.filter { $0.isStackNegative }
         let withdrawals = purchases.filter { $0.isTransfer }
 
-        // Total BTC on exchanges = buys - sells/payments - withdrawals
         let boughtBTC = buys.reduce(0.0) { $0 + $1.btcAmount }
         let soldBTC = sells.reduce(0.0) { $0 + $1.btcAmount }
         let withdrawnBTC = withdrawals.reduce(0.0) { $0 + $1.btcAmount }
 
-        // Stack = bought - sold - withdrawn (withdrawn is on cold storage, tracked separately)
-        let exchangeStackBTC = max(0, boughtBTC - soldBTC - withdrawnBTC)
+        // Total stack = bought - sold (withdrawals are still yours, just in cold storage)
+        let totalStackBTC = max(0, boughtBTC - soldBTC)
+        // Exchange stack = total - withdrawn
+        let exchangeStackBTC = max(0, totalStackBTC - withdrawnBTC)
+        // Cold storage = withdrawn amount
+        let coldStorageBTC = withdrawnBTC
 
-        // Total invested = money in - money out from sells
+        // Total invested = money spent buying - money received selling
         let totalBought = buys.reduce(0.0) { $0 + $1.usdSpent }
         let totalSold = sells.reduce(0.0) { $0 + $1.usdSpent }
-
-        // Net invested (cost basis for remaining stack)
         let netInvested = totalBought - totalSold
 
-        // Realized P&L from sells
+        // Average cost basis across all buys
         let avgBuyCost = boughtBTC > 0 ? totalBought / boughtBTC : 0
+
+        // Realized P&L from sells
         let realizedPL = sells.reduce(0.0) { total, sell in
             let sellRevenue = sell.btcAmount * sell.pricePerBTC
             let costOfSold = sell.btcAmount * avgBuyCost
             return total + (sellRevenue - costOfSold)
         }
 
-        // Current value of remaining exchange stack
-        let currentValue = exchangeStackBTC * currentPrice
-        let unrealizedPL = currentValue - (exchangeStackBTC * avgBuyCost)
+        // Current value of ENTIRE stack (exchange + cold storage)
+        let currentValue = totalStackBTC * currentPrice
+        let unrealizedPL = currentValue - (totalStackBTC * avgBuyCost)
         let totalPL = unrealizedPL + realizedPL
         let totalPLPercent = netInvested > 0 ? (totalPL / netInvested) * 100 : 0
 
         let sorted = buys.sorted { $0.date < $1.date }
 
         return PortfolioSummary(
-            totalBTC: exchangeStackBTC,
-            totalSats: Int(exchangeStackBTC * 100_000_000),
+            totalBTC: totalStackBTC,
+            totalSats: Int(totalStackBTC * 100_000_000),
+            exchangeBTC: exchangeStackBTC,
+            coldStorageBTC: coldStorageBTC,
             totalInvested: netInvested,
             currentValue: currentValue,
             totalPL: totalPL,

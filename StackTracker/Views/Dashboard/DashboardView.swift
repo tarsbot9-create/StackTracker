@@ -69,6 +69,39 @@ struct DashboardView: View {
                                 .font(.subheadline.bold())
                                 .foregroundColor(summary.isProfit ? Theme.profitGreen : Theme.lossRed)
                                 .padding(.top, 2)
+
+                                // Exchange vs Cold Storage breakdown
+                                if summary.coldStorageBTC > 0 {
+                                    Divider().background(Theme.cardBorder).padding(.vertical, 4)
+
+                                    HStack(spacing: 24) {
+                                        VStack(spacing: 2) {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "building.columns")
+                                                    .font(.caption2)
+                                                Text("Exchange")
+                                                    .font(.caption2)
+                                            }
+                                            .foregroundColor(Theme.textSecondary)
+                                            Text(Formatters.formatBTC(summary.exchangeBTC) + " BTC")
+                                                .font(.caption.bold())
+                                                .foregroundColor(Theme.textPrimary)
+                                        }
+
+                                        VStack(spacing: 2) {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "lock.shield")
+                                                    .font(.caption2)
+                                                Text("Cold Storage")
+                                                    .font(.caption2)
+                                            }
+                                            .foregroundColor(Theme.textSecondary)
+                                            Text(Formatters.formatBTC(summary.coldStorageBTC) + " BTC")
+                                                .font(.caption.bold())
+                                                .foregroundColor(Theme.bitcoinOrange)
+                                        }
+                                    }
+                                }
                             }
                             .frame(maxWidth: .infinity)
                             .padding(20)
