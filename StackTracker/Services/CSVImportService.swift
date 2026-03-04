@@ -304,9 +304,19 @@ final class CSVImportService {
             throw ImportError.skippedRow("No valid date")
         }
 
-        let btcAmount = abs(parseDouble(get("asset amount") ?? "0"))
+        var btcAmount = abs(parseDouble(get("asset amount") ?? "0"))
         let usdAmount = abs(parseDouble(get("amount") ?? get("net amount") ?? "0"))
         let assetPrice = parseDouble(get("asset price") ?? "0")
+
+        // Fallback: parse BTC amount from Notes field (older Cash App exports)
+        // e.g. "purchase of BTC 0.00085556"
+        if btcAmount == 0 {
+            let notes = get("notes") ?? ""
+            if let range = notes.range(of: "BTC ") {
+                let after = String(notes[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+                btcAmount = abs(parseDouble(after))
+            }
+        }
 
         guard btcAmount > 0 else {
             throw ImportError.skippedRow("No BTC amount")
