@@ -7,6 +7,7 @@ struct SettingsView: View {
 
     @AppStorage("denomination") private var denomination = "BTC"
     @AppStorage("currency") private var currency = "USD"
+    @AppStorage("appearanceMode") private var appearanceMode = "dark"
 
     @State private var showExportSheet = false
     @State private var showImportSheet = false
@@ -16,6 +17,15 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("Appearance") {
+                    Picker("Theme", selection: $appearanceMode) {
+                        Text("Dark").tag("dark")
+                        Text("Light").tag("light")
+                        Text("Auto").tag("auto")
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 Section("Display") {
                     Picker("Denomination", selection: $denomination) {
                         Text("BTC").tag("BTC")
@@ -97,7 +107,7 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background(Theme.darkBackground)
             .navigationTitle("Settings")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
             .alert("Delete All Data?", isPresented: $showDeleteAlert) {
                 Button("Delete", role: .destructive) {
                     deleteAllData()

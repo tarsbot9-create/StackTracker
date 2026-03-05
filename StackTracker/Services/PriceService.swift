@@ -21,6 +21,8 @@ struct PricePoint: Identifiable {
 
 @MainActor
 final class PriceService: ObservableObject {
+    static let shared = PriceService()
+
     @Published var currentPrice: Double = 0
     @Published var change24h: Double = 0
     @Published var chartData: [PricePoint] = []

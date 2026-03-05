@@ -5,7 +5,7 @@ struct AddressDetailView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Purchase.date) private var purchases: [Purchase]
     @StateObject private var blockchain = BlockchainService()
-    @StateObject private var priceService = PriceService()
+    @ObservedObject private var priceService = PriceService.shared
 
     let address: WatchedAddress
 
@@ -129,7 +129,6 @@ struct AddressDetailView: View {
         .background(Theme.darkBackground)
         .navigationTitle("Address")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {

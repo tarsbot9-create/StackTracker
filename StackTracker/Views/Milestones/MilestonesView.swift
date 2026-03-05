@@ -64,7 +64,7 @@ struct MilestonesView: View {
             }
             .background(Theme.darkBackground)
             .navigationTitle("Milestones")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

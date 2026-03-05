@@ -3,7 +3,8 @@ import SwiftData
 
 struct AddPurchaseView: View {
     @Environment(\.modelContext) private var context
-    @StateObject private var priceService = PriceService()
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var priceService = PriceService.shared
 
     @State private var date = Date()
     @State private var inputMode: InputMode = .usd
@@ -201,7 +202,13 @@ struct AddPurchaseView: View {
             }
             .background(Theme.darkBackground)
             .navigationTitle("Add Purchase")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(Theme.textSecondary)
+                }
+            }
             .alert("Custom Wallet", isPresented: $showCustomWallet) {
                 TextField("Wallet name", text: $customWallet)
                 Button("Save") {

@@ -91,31 +91,32 @@ struct PortfolioCalculator {
     }
 
     static func calculateStreak(purchases: [Purchase]) -> Int {
-        guard !purchases.isEmpty else { return 0 }
+        let buys = purchases.filter { $0.transactionType == .buy }
+        guard !buys.isEmpty else { return 0 }
 
         let calendar = Calendar.current
         let now = Date()
         var streak = 0
         var checkDate = now
 
-        // Check consecutive weeks going backwards
+        // Check consecutive weeks going backwards (buys only)
         while true {
             let weekStart = calendar.dateInterval(of: .weekOfYear, for: checkDate)?.start ?? checkDate
             let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? checkDate
 
-            let hasPurchaseThisWeek = purchases.contains { purchase in
+            let hasBuyThisWeek = buys.contains { purchase in
                 purchase.date >= weekStart && purchase.date < weekEnd
             }
 
-            if hasPurchaseThisWeek {
+            if hasBuyThisWeek {
                 streak += 1
                 checkDate = calendar.date(byAdding: .weekOfYear, value: -1, to: checkDate) ?? checkDate
             } else if streak == 0 {
-                // Current week might not have a purchase yet, skip it
+                // Current week might not have a buy yet, check previous week
                 checkDate = calendar.date(byAdding: .weekOfYear, value: -1, to: checkDate) ?? checkDate
                 let prevWeekStart = calendar.dateInterval(of: .weekOfYear, for: checkDate)?.start ?? checkDate
                 let prevWeekEnd = calendar.date(byAdding: .day, value: 7, to: prevWeekStart) ?? checkDate
-                let hasPrevWeek = purchases.contains { $0.date >= prevWeekStart && $0.date < prevWeekEnd }
+                let hasPrevWeek = buys.contains { $0.date >= prevWeekStart && $0.date < prevWeekEnd }
                 if hasPrevWeek {
                     streak += 1
                     checkDate = calendar.date(byAdding: .weekOfYear, value: -1, to: checkDate) ?? checkDate
@@ -132,7 +133,7 @@ struct PortfolioCalculator {
 
     // Data for DCA cost basis line chart
     static func costBasisOverTime(purchases: [Purchase]) -> [(date: Date, costBasis: Double, totalInvested: Double, totalBTC: Double)] {
-        let sorted = purchases.sorted { $0.date < $1.date }
+        let sorted = purchases.filter { $0.transactionType == .buy }.sorted { $0.date < $1.date }
         var runningBTC = 0.0
         var runningUSD = 0.0
         var result: [(date: Date, costBasis: Double, totalInvested: Double, totalBTC: Double)] = []

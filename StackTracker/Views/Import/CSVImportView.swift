@@ -56,7 +56,6 @@ struct CSVImportView: View {
             .background(Theme.darkBackground)
             .navigationTitle("Import CSV")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

@@ -4,7 +4,7 @@ import SwiftData
 struct DashboardView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Purchase.date, order: .reverse) private var purchases: [Purchase]
-    @StateObject private var priceService = PriceService()
+    @ObservedObject private var priceService = PriceService.shared
 
     private var summary: PortfolioSummary {
         PortfolioCalculator.summary(purchases: purchases, currentPrice: priceService.currentPrice)
@@ -27,8 +27,8 @@ struct DashboardView: View {
                             .foregroundColor(Theme.textSecondary)
                             .padding(.horizontal, 4)
 
-                        BitcoinChartView(data: priceService.chartData, height: 180)
-                            .padding(12)
+                        BitcoinChartView(data: priceService.chartData, height: 130)
+                            .padding(8)
                             .background(Theme.cardBackground)
                             .cornerRadius(12)
                             .overlay(
@@ -128,17 +128,29 @@ struct DashboardView: View {
                                 value: Formatters.formatUSD(summary.totalInvested),
                                 icon: "dollarsign.circle"
                             )
-                            StatCard(
-                                title: "Purchases",
-                                value: "\(summary.purchaseCount)",
-                                icon: "cart"
-                            )
-                            StatCard(
-                                title: "DCA Streak",
-                                value: "\(summary.dcaStreak) weeks",
-                                icon: "flame"
-                            )
                         }
+
+                        // DCA Streak - full width thin bar
+                        HStack {
+                            Image(systemName: "flame")
+                                .font(.caption)
+                                .foregroundColor(Theme.bitcoinOrange)
+                            Text("DCA Streak")
+                                .font(.caption)
+                                .foregroundColor(Theme.textSecondary)
+                            Spacer()
+                            Text("\(summary.dcaStreak) weeks")
+                                .font(.subheadline.bold())
+                                .foregroundColor(Theme.bitcoinOrange)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Theme.cardBackground)
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Theme.cardBorder, lineWidth: 1)
+                        )
                     } else {
                         // Empty state
                         VStack(spacing: 16) {
@@ -170,7 +182,7 @@ struct DashboardView: View {
             }
             .background(Theme.darkBackground)
             .navigationTitle("StackTracker")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
         }
         .task {
             await priceService.fetchCurrentPrice()

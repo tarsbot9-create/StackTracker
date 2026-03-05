@@ -170,7 +170,6 @@ struct AddAddressView: View {
             .background(Theme.darkBackground)
             .navigationTitle("Add Address")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

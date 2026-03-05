@@ -4,7 +4,7 @@ import Charts
 
 struct DCAAnalyticsView: View {
     @Query(sort: \Purchase.date) private var purchases: [Purchase]
-    @StateObject private var priceService = PriceService()
+    @ObservedObject private var priceService = PriceService.shared
 
     private var summary: PortfolioSummary {
         PortfolioCalculator.summary(purchases: purchases, currentPrice: priceService.currentPrice)
@@ -12,6 +12,28 @@ struct DCAAnalyticsView: View {
 
     private var costBasisData: [(date: Date, costBasis: Double, totalInvested: Double, totalBTC: Double)] {
         PortfolioCalculator.costBasisOverTime(purchases: purchases)
+    }
+
+    private var buyPurchases: [Purchase] {
+        purchases.filter { $0.transactionType == .buy }
+    }
+
+    private var yearlyStacking: [(year: String, btc: Double, isCurrent: Bool)] {
+        let buys = buyPurchases
+        guard !buys.isEmpty else { return [] }
+
+        let cal = Calendar.current
+        let currentYear = cal.component(.year, from: Date())
+        var byYear: [Int: Double] = [:]
+
+        for p in buys {
+            let y = cal.component(.year, from: p.date)
+            byYear[y, default: 0] += p.btcAmount
+        }
+
+        return byYear.keys.sorted().map { year in
+            (year: String(year), btc: byYear[year] ?? 0, isCurrent: year == currentYear)
+        }
     }
 
     var body: some View {
@@ -25,7 +47,7 @@ struct DCAAnalyticsView: View {
             }
             .background(Theme.darkBackground)
             .navigationTitle("Analytics")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
         }
         .task {
             await priceService.fetchCurrentPrice()
@@ -52,89 +74,25 @@ struct DCAAnalyticsView: View {
     private var analyticsContent: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Cost Basis vs BTC Price Chart
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Your Cost Basis vs BTC Price")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                        .padding(.horizontal, 4)
-
-                    costBasisChart
-                        .padding(12)
-                        .background(Theme.cardBackground)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Theme.cardBorder, lineWidth: 1)
-                        )
-
-                    // Legend
-                    HStack(spacing: 16) {
-                        HStack(spacing: 4) {
-                            Circle().fill(Theme.bitcoinOrange).frame(width: 8, height: 8)
-                            Text("BTC Price").font(.caption2).foregroundColor(Theme.textSecondary)
-                        }
-                        HStack(spacing: 4) {
-                            Circle().fill(Theme.profitGreen).frame(width: 8, height: 8)
-                            Text("Your Avg Cost").font(.caption2).foregroundColor(Theme.textSecondary)
-                        }
-                    }
-                    .padding(.horizontal, 4)
-                }
-
-                // Invested vs Value Chart
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Total Invested vs Current Value")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                        .padding(.horizontal, 4)
-
-                    investedVsValueChart
-                        .padding(12)
-                        .background(Theme.cardBackground)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Theme.cardBorder, lineWidth: 1)
-                        )
-                }
-
-                // Per-Purchase Performance
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Per-Purchase Performance")
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
-                        .padding(.horizontal, 4)
-
-                    purchasePerformanceChart
-                        .padding(12)
-                        .background(Theme.cardBackground)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Theme.cardBorder, lineWidth: 1)
-                        )
-                }
-
-                // DCA Stats
+                // Stats Grid - top of page
                 LazyVGrid(columns: [
                     GridItem(.flexible(), spacing: 12),
                     GridItem(.flexible(), spacing: 12)
                 ], spacing: 12) {
                     StatCard(
-                        title: "Avg Cost Basis",
-                        value: Formatters.formatUSDCompact(summary.averageCostBasis),
-                        subtitle: priceService.currentPrice > summary.averageCostBasis ? "Below market" : "Above market",
-                        valueColor: priceService.currentPrice > summary.averageCostBasis ? Theme.profitGreen : Theme.lossRed,
-                        icon: "target"
+                        title: "Total Stack",
+                        value: Formatters.formatBTC(summary.totalBTC) + " BTC",
+                        subtitle: Formatters.formatUSD(summary.currentValue),
+                        valueColor: Theme.bitcoinOrange,
+                        icon: "bitcoinsign.circle"
                     )
 
                     StatCard(
-                        title: "DCA Streak",
-                        value: "\(summary.dcaStreak) weeks",
-                        subtitle: summary.dcaStreak > 4 ? "Keep stacking!" : "Stay consistent",
-                        valueColor: Theme.bitcoinOrange,
-                        icon: "flame"
+                        title: "Total Return",
+                        value: Formatters.formatPercent(summary.totalPLPercent),
+                        subtitle: Formatters.formatUSD(summary.totalPL),
+                        valueColor: summary.isProfit ? Theme.profitGreen : Theme.lossRed,
+                        icon: "chart.line.uptrend.xyaxis"
                     )
 
                     if let first = summary.firstPurchaseDate {
@@ -148,21 +106,69 @@ struct DCAAnalyticsView: View {
                     }
 
                     StatCard(
-                        title: "Total Return",
-                        value: Formatters.formatPercent(summary.totalPLPercent),
-                        subtitle: Formatters.formatUSD(summary.totalPL),
-                        valueColor: summary.isProfit ? Theme.profitGreen : Theme.lossRed,
-                        icon: "chart.line.uptrend.xyaxis"
+                        title: "Purchases",
+                        value: "\(summary.purchaseCount)",
+                        subtitle: "Total buys",
+                        icon: "cart"
                     )
                 }
+
+                // BTC Stacked by Year
+                chartCard(title: "BTC Stacked by Year") {
+                    yearlyStackingChart
+                }
+
+                // Invested vs Value
+                chartCard(title: "Total Invested vs Current Value") {
+                    investedVsValueChart
+                }
+                HStack(spacing: 16) {
+                    legendDot(color: Theme.textSecondary, label: "Invested")
+                    legendDot(color: Theme.bitcoinOrange, label: "Current Value")
+                }
+                .padding(.horizontal, 4)
+                .padding(.top, -12)
+
             }
             .padding(16)
         }
     }
 
+    // MARK: - Chart Card wrapper
+    private func chartCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+                .padding(.horizontal, 4)
+
+            content()
+                .padding(12)
+                .background(Theme.cardBackground)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Theme.cardBorder, lineWidth: 1)
+                )
+        }
+    }
+
+    private func legendDot(color: Color, label: String) -> some View {
+        HStack(spacing: 4) {
+            Circle().fill(color).frame(width: 8, height: 8)
+            Text(label).font(.caption2).foregroundColor(Theme.textSecondary)
+        }
+    }
+
+    // MARK: - Cost Basis Chart
     private var costBasisChart: some View {
-        Chart {
-            // BTC price line from API data
+        let allPrices = priceService.chartData.map(\.price) + costBasisData.map(\.costBasis)
+        let lo = allPrices.min() ?? 0
+        let hi = allPrices.max() ?? 1
+        let range = hi - lo
+        let padding = max(range * 0.15, 1000)
+
+        return Chart {
             ForEach(priceService.chartData) { point in
                 LineMark(
                     x: .value("Date", point.date),
@@ -171,9 +177,20 @@ struct DCAAnalyticsView: View {
                 )
                 .foregroundStyle(Theme.bitcoinOrange)
                 .lineStyle(StrokeStyle(lineWidth: 2))
+
+                AreaMark(
+                    x: .value("Date", point.date),
+                    y: .value("Price", point.price)
+                )
+                .foregroundStyle(
+                    .linearGradient(
+                        colors: [Theme.bitcoinOrange.opacity(0.15), Theme.bitcoinOrange.opacity(0.0)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
             }
 
-            // Cost basis line from purchases
             ForEach(Array(costBasisData.enumerated()), id: \.offset) { _, item in
                 LineMark(
                     x: .value("Date", item.date),
@@ -188,11 +205,13 @@ struct DCAAnalyticsView: View {
                     y: .value("Price", item.costBasis)
                 )
                 .foregroundStyle(Theme.profitGreen)
-                .symbolSize(30)
+                .symbolSize(20)
             }
         }
+        .chartYScale(domain: (lo - padding)...(hi + padding))
+        .chartPlotStyle { plot in plot.clipped() }
         .chartYAxis {
-            AxisMarks(position: .trailing) { _ in
+            AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { _ in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Theme.cardBorder)
                 AxisValueLabel().foregroundStyle(Theme.textSecondary)
             }
@@ -202,11 +221,47 @@ struct DCAAnalyticsView: View {
                 AxisValueLabel().foregroundStyle(Theme.textSecondary)
             }
         }
-        .frame(height: 220)
+        .frame(height: 180)
     }
 
+    // MARK: - Yearly Stacking Chart
+    private var yearlyStackingChart: some View {
+        Chart(yearlyStacking, id: \.year) { item in
+            BarMark(
+                x: .value("Year", item.year),
+                y: .value("BTC", item.btc)
+            )
+            .foregroundStyle(item.isCurrent ? Theme.bitcoinOrange : Theme.profitGreen)
+            .cornerRadius(6)
+            .annotation(position: .top, spacing: 4) {
+                Text(Formatters.formatBTC(item.btc))
+                    .font(.caption2.bold())
+                    .foregroundColor(item.isCurrent ? Theme.bitcoinOrange : Theme.profitGreen)
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { _ in
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Theme.cardBorder)
+                AxisValueLabel().foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .chartXAxis {
+            AxisMarks { _ in
+                AxisValueLabel().foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .frame(height: 160)
+    }
+
+    // MARK: - Invested vs Value Chart
     private var investedVsValueChart: some View {
-        Chart {
+        let allValues = costBasisData.flatMap { [$0.totalInvested, $0.totalBTC * priceService.currentPrice] }
+        let lo = allValues.min() ?? 0
+        let hi = allValues.max() ?? 1
+        let range = hi - lo
+        let padding = max(range * 0.15, 100)
+
+        return Chart {
             ForEach(Array(costBasisData.enumerated()), id: \.offset) { _, item in
                 LineMark(
                     x: .value("Date", item.date),
@@ -223,10 +278,24 @@ struct DCAAnalyticsView: View {
                 )
                 .foregroundStyle(Theme.bitcoinOrange)
                 .lineStyle(StrokeStyle(lineWidth: 2))
+
+                AreaMark(
+                    x: .value("Date", item.date),
+                    y: .value("USD", item.totalBTC * priceService.currentPrice)
+                )
+                .foregroundStyle(
+                    .linearGradient(
+                        colors: [Theme.bitcoinOrange.opacity(0.12), Theme.bitcoinOrange.opacity(0.0)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
             }
         }
+        .chartYScale(domain: max(0, lo - padding)...(hi + padding))
+        .chartPlotStyle { plot in plot.clipped() }
         .chartYAxis {
-            AxisMarks(position: .trailing) { _ in
+            AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { _ in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Theme.cardBorder)
                 AxisValueLabel().foregroundStyle(Theme.textSecondary)
             }
@@ -236,11 +305,13 @@ struct DCAAnalyticsView: View {
                 AxisValueLabel().foregroundStyle(Theme.textSecondary)
             }
         }
-        .frame(height: 200)
+        .frame(height: 170)
     }
 
+    // MARK: - Purchase Performance Chart
     private var purchasePerformanceChart: some View {
-        Chart(purchases) { purchase in
+        let buys = buyPurchases
+        return Chart(buys) { purchase in
             let pl = priceService.currentPrice > 0 ? purchase.currentPL(priceService.currentPrice) : 0
 
             BarMark(
@@ -248,10 +319,11 @@ struct DCAAnalyticsView: View {
                 y: .value("P&L %", pl)
             )
             .foregroundStyle(pl >= 0 ? Theme.profitGreen : Theme.lossRed)
-            .cornerRadius(4)
+            .cornerRadius(3)
         }
+        .chartPlotStyle { plot in plot.clipped() }
         .chartYAxis {
-            AxisMarks(position: .trailing) { _ in
+            AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { _ in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Theme.cardBorder)
                 AxisValueLabel().foregroundStyle(Theme.textSecondary)
             }
@@ -261,6 +333,6 @@ struct DCAAnalyticsView: View {
                 AxisValueLabel().foregroundStyle(Theme.textSecondary)
             }
         }
-        .frame(height: 180)
+        .frame(height: 150)
     }
 }

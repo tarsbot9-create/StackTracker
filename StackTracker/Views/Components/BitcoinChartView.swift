@@ -7,6 +7,17 @@ struct BitcoinChartView: View {
     var showAxis: Bool = true
     var lineColor: Color = Theme.bitcoinOrange
 
+    private var yDomain: ClosedRange<Double> {
+        let prices = data.map(\.price)
+        guard let lo = prices.min(), let hi = prices.max(), hi > lo else {
+            let p = prices.first ?? 0
+            return (p * 0.95)...(p * 1.05)
+        }
+        let range = hi - lo
+        let padding = range * 0.25
+        return (lo - padding)...(hi + padding)
+    }
+
     var body: some View {
         if data.isEmpty {
             RoundedRectangle(cornerRadius: 12)
@@ -37,6 +48,10 @@ struct BitcoinChartView: View {
                     )
                 )
                 .interpolationMethod(.catmullRom)
+            }
+            .chartYScale(domain: yDomain)
+            .chartPlotStyle { plotArea in
+                plotArea.clipped()
             }
             .chartXAxis(showAxis ? .automatic : .hidden)
             .chartYAxis(showAxis ? .automatic : .hidden)

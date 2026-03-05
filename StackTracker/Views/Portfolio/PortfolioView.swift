@@ -4,11 +4,12 @@ import SwiftData
 struct PortfolioView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Purchase.date, order: .reverse) private var purchases: [Purchase]
-    @StateObject private var priceService = PriceService()
+    @ObservedObject private var priceService = PriceService.shared
 
     @State private var sortBy: SortOption = .dateDesc
     @State private var filterWallet: String? = nil
     @State private var purchaseToDelete: Purchase?
+    @State private var showAddPurchase = false
 
     enum SortOption: String, CaseIterable {
         case dateDesc = "Newest"
@@ -23,7 +24,8 @@ struct PortfolioView: View {
     }
 
     private var sortedPurchases: [Purchase] {
-        let filtered = filterWallet == nil ? purchases : purchases.filter { $0.walletName == filterWallet }
+        let base = purchases.filter { $0.transactionType == .buy || $0.transactionType == .sell }
+        let filtered = filterWallet == nil ? base : base.filter { $0.walletName == filterWallet }
         let price = priceService.currentPrice
 
         switch sortBy {
@@ -46,7 +48,20 @@ struct PortfolioView: View {
             }
             .background(Theme.darkBackground)
             .navigationTitle("Portfolio")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showAddPurchase = true
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundColor(Theme.bitcoinOrange)
+                    }
+                }
+            }
+            .sheet(isPresented: $showAddPurchase) {
+                AddPurchaseView()
+            }
         }
         .task {
             await priceService.fetchCurrentPrice()

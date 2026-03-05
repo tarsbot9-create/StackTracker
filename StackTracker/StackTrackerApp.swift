@@ -72,9 +72,35 @@ struct StackTrackerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppRootView()
         }
         .modelContainer(container)
+    }
+}
+
+struct AppRootView: View {
+    @AppStorage("appearanceMode") private var appearanceMode = "dark"
+
+    private var uiStyle: UIUserInterfaceStyle {
+        switch appearanceMode {
+        case "dark": return .dark
+        case "light": return .light
+        default: return .unspecified
+        }
+    }
+
+    var body: some View {
+        ContentView()
+            .onChange(of: appearanceMode, initial: true) { _, _ in
+                applyAppearance()
+            }
+    }
+
+    private func applyAppearance() {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
+        for window in windowScene.windows {
+            window.overrideUserInterfaceStyle = uiStyle
+        }
     }
 }
 
@@ -91,9 +117,9 @@ struct ContentView: View {
                     Label("Portfolio", systemImage: "list.bullet.rectangle")
                 }
 
-            AddPurchaseView()
+            DCAAnalyticsView()
                 .tabItem {
-                    Label("Add", systemImage: "plus.circle.fill")
+                    Label("Analytics", systemImage: "chart.bar.xaxis")
                 }
 
             AddressListView()
@@ -107,6 +133,5 @@ struct ContentView: View {
                 }
         }
         .tint(Theme.bitcoinOrange)
-        .preferredColorScheme(.dark)
     }
 }

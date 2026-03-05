@@ -4,7 +4,7 @@ import SwiftData
 struct AddressListView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \WatchedAddress.addedAt) private var addresses: [WatchedAddress]
-    @StateObject private var priceService = PriceService()
+    @ObservedObject private var priceService = PriceService.shared
 
     @State private var showAddSheet = false
     @State private var showDeleteAlert = false
@@ -103,7 +103,7 @@ struct AddressListView: View {
             }
             .background(Theme.darkBackground)
             .navigationTitle("Addresses")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showAddSheet) {
                 AddAddressView()
             }
