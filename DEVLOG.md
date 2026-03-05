@@ -100,13 +100,51 @@
 
 ---
 
+## Session Log: March 4, 2026
+
+### UI Overhaul
+1. **Inline navigation titles** - Removed large headers from all pages, switched to compact inline titles
+2. **30-day chart improvements** - Shrunk height (180->130), Y-axis scales to actual price range with 25% padding (no more starting from $0), clipped area fill so gradient doesn't bleed over x-axis
+3. **Portfolio cleanup** - Filtered out withdrawals/payments (fixed +infinity P&L bug), only shows buys and sells
+4. **Tab reorganization** - Removed "Add" tab, replaced with Analytics tab. New layout: Dashboard | Portfolio | Analytics | Addresses | Settings. Add Purchase accessible via (+) button in Portfolio toolbar. Add Address via existing button on Addresses page.
+
+### Analytics Page Rebuild
+- Removed "Cost Basis vs BTC Price" chart and "Per-Purchase Performance" chart
+- Added "BTC Stacked by Year" bar chart (previous years green, current YTD orange, amounts annotated)
+- Top cards: Total Stack | Total Return | Stacking Since | Purchases
+- Fixed `costBasisOverTime` to filter buys only (was including withdrawals with $0 cost, inflating value)
+- Fixed "Invested vs Value" chart - value line was incorrectly above invested due to withdrawal data
+
+### Dashboard Streamlining
+- Stat cards reduced to: Avg Cost Basis + Total Invested (side by side)
+- Added full-width thin DCA Streak bar below cards
+- DCA Streak calculation now only counts buy transactions (was counting withdrawals as purchase weeks)
+
+### Adaptive Theme System
+- Added Light/Dark/Auto segmented picker in Settings
+- Theme colors use `UIColor { traitCollection in }` for dynamic switching
+- Dark mode preserves original navy palette (#0D1117 background, #161B22 cards)
+- Light mode uses iOS system colors (white background, gray cards)
+- Auto mode follows device system appearance setting
+- Removed all hardcoded `.toolbarColorScheme(.dark)` overrides
+
+### Bug Fixes
+- **PriceService singleton** - All tabs now share `PriceService.shared` instead of creating separate instances. Previously, CoinGecko rate limiter (1 call/60s) meant only Dashboard got the price; Analytics showed -100% return and $0 value.
+- **Duplicate Theme.swift** - Had two Theme files (root + Theme/), edits went to wrong one. Removed duplicate.
+- **Add Purchase sheet** - Added Cancel button and dismiss environment for sheet presentation
+
+### Simulator Note
+- Updated from iPhone 16 Pro to iPhone 17 Pro simulator (Xcode 26.3 / iOS 26.2)
+
+---
+
 ## Next Steps (Backlog)
-- [ ] Analytics tab (was replaced by Addresses -- add back as section in Dashboard or Settings)
 - [ ] Milestones view (100K sats to 1 BTC progress bars)
 - [ ] Portfolio view: show transaction type badges, filter by type
 - [ ] Export: include transaction types in CSV export
 - [ ] Address auto-match: surface matches in UI ("This withdrawal matched your Cold Storage address")
 - [ ] Tax reporting: FIFO/LIFO cost basis methods, annual summary
+- [ ] Light mode polish (ensure all screens look good in both modes)
 - [ ] App Store prep: app icon, screenshots, privacy policy
 - [ ] TestFlight distribution
 - [ ] Real device testing (iPhone via USB)
