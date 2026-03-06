@@ -5,6 +5,9 @@ import Charts
 struct DCAAnalyticsView: View {
     @Query(sort: \Purchase.date) private var purchases: [Purchase]
     @ObservedObject private var priceService = PriceService.shared
+    @ObservedObject private var subscriptionService = SubscriptionService.shared
+
+    @State private var showPaywall = false
 
     private var summary: PortfolioSummary {
         PortfolioCalculator.summary(purchases: purchases, currentPrice: priceService.currentPrice)
@@ -41,13 +44,50 @@ struct DCAAnalyticsView: View {
             Group {
                 if purchases.count < 2 {
                     emptyState
-                } else {
+                } else if subscriptionService.isPro {
                     analyticsContent
+                } else {
+                    ZStack {
+                        analyticsContent
+                            .blur(radius: 6)
+                            .allowsHitTesting(false)
+
+                        VStack(spacing: 16) {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 40))
+                                .foregroundColor(Theme.bitcoinOrange)
+
+                            Text("Unlock Analytics")
+                                .font(.title3.bold())
+                                .foregroundColor(Theme.textPrimary)
+
+                            Text("Get DCA charts, cost basis tracking, and performance analytics with Pro.")
+                                .font(.subheadline)
+                                .foregroundColor(Theme.textSecondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+
+                            Button {
+                                showPaywall = true
+                            } label: {
+                                Text("Unlock Pro")
+                                    .fontWeight(.bold)
+                                    .padding(.horizontal, 32)
+                                    .padding(.vertical, 12)
+                                    .background(Theme.bitcoinOrange)
+                                    .foregroundColor(.black)
+                                    .cornerRadius(12)
+                            }
+                        }
+                    }
                 }
             }
             .background(Theme.darkBackground)
             .navigationTitle("Analytics")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+            }
         }
         .task {
             await priceService.fetchCurrentPrice()

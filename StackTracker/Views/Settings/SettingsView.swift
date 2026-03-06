@@ -4,6 +4,7 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Purchase.date) private var purchases: [Purchase]
+    @ObservedObject private var subscriptionService = SubscriptionService.shared
 
     @AppStorage("denomination") private var denomination = "BTC"
     @AppStorage("currency") private var currency = "USD"
@@ -12,6 +13,7 @@ struct SettingsView: View {
     @State private var showExportSheet = false
     @State private var showImportSheet = false
     @State private var showDeleteAlert = false
+    @State private var showPaywall = false
     @State private var csvURL: URL?
 
     var body: some View {
@@ -43,21 +45,79 @@ struct SettingsView: View {
 
                 Section("Data") {
                     Button {
-                        showImportSheet = true
+                        if subscriptionService.isPro {
+                            showImportSheet = true
+                        } else {
+                            showPaywall = true
+                        }
                     } label: {
-                        Label("Import from CSV", systemImage: "square.and.arrow.down")
+                        HStack {
+                            Label("Import from CSV", systemImage: "square.and.arrow.down")
+                            if !subscriptionService.isPro {
+                                Spacer()
+                                Image(systemName: "lock.fill")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
+                        }
                     }
 
                     Button {
-                        exportCSV()
+                        if subscriptionService.isPro {
+                            exportCSV()
+                        } else {
+                            showPaywall = true
+                        }
                     } label: {
-                        Label("Export to CSV", systemImage: "square.and.arrow.up")
+                        HStack {
+                            Label("Export to CSV", systemImage: "square.and.arrow.up")
+                            if !subscriptionService.isPro {
+                                Spacer()
+                                Image(systemName: "lock.fill")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
+                        }
                     }
 
                     Button(role: .destructive) {
                         showDeleteAlert = true
                     } label: {
                         Label("Delete All Data", systemImage: "trash")
+                    }
+                }
+
+                Section("Subscription") {
+                    if subscriptionService.isPro {
+                        HStack {
+                            Label("StackTracker Pro", systemImage: "checkmark.seal.fill")
+                                .foregroundColor(Theme.bitcoinOrange)
+                            Spacer()
+                            Text("Active")
+                                .font(.caption)
+                                .foregroundColor(Theme.profitGreen)
+                        }
+
+                        Button {
+                            if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            Label("Manage Subscription", systemImage: "creditcard")
+                        }
+                    } else {
+                        Button {
+                            showPaywall = true
+                        } label: {
+                            HStack {
+                                Label("Upgrade to Pro", systemImage: "star.fill")
+                                    .foregroundColor(Theme.bitcoinOrange)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
+                        }
                     }
                 }
 
@@ -118,6 +178,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showImportSheet) {
                 CSVImportView()
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
             }
             .sheet(isPresented: $showExportSheet) {
                 if let url = csvURL {

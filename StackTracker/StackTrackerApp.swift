@@ -68,6 +68,8 @@ struct StackTrackerApp: App {
             // Fallback: if migration fails, create fresh container
             container = try! ModelContainer(for: schema, configurations: [config])
         }
+
+        SubscriptionService.shared.configure()
     }
 
     var body: some Scene {
@@ -80,6 +82,7 @@ struct StackTrackerApp: App {
 
 struct AppRootView: View {
     @AppStorage("appearanceMode") private var appearanceMode = "dark"
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     private var uiStyle: UIUserInterfaceStyle {
         switch appearanceMode {
@@ -90,10 +93,16 @@ struct AppRootView: View {
     }
 
     var body: some View {
-        ContentView()
-            .onChange(of: appearanceMode, initial: true) { _, _ in
-                applyAppearance()
+        Group {
+            if hasCompletedOnboarding {
+                ContentView()
+            } else {
+                OnboardingView()
             }
+        }
+        .onChange(of: appearanceMode, initial: true) { _, _ in
+            applyAppearance()
+        }
     }
 
     private func applyAppearance() {

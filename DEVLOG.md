@@ -138,13 +138,61 @@
 
 ---
 
+## Session Log: March 5, 2026
+
+### App Store Prep
+1. **App Icon**
+   - Researched best practices and competitor icons (Strike, Swan, River, Cash App)
+   - Created 3 concepts: Stacking Bars, Stacked S, Stacked Chevrons
+   - Selected Concept B: Stacked S — stylized "S" from horizontal bars with vertical strikes
+   - Colors: Bitcoin orange gradient (#FFAB40 → #F7931A → #E07B10) on dark navy (#0D1117)
+   - Polished with subtle glow, drop shadow, radial background
+   - Exported 1024x1024 PNG: `AppIcon-1024.png`
+
+2. **Privacy Policy**
+   - Hosted on GitHub Pages: https://tarsbot9-create.github.io/stacktracker-site/privacy.html
+   - Landing page: https://tarsbot9-create.github.io/stacktracker-site/
+   - Support email: stacktrackersupport@gmail.com
+   - Repo: https://github.com/tarsbot9-create/stacktracker-site
+
+3. **Monetization Strategy**
+   - Model: Freemium with RevenueCat
+   - Monthly: $4.99 (stacktracker_pro_monthly)
+   - Annual: $34.99 (stacktracker_pro_annual) — saves 42%, highlighted as default
+   - Free tier: Manual add purchase, basic dashboard, up to 25 transactions, Settings
+   - Pro tier: CSV import, unlimited transactions, cold storage addresses, Analytics tab, CSV export
+
+### RevenueCat Integration
+- Added RevenueCat/purchases-ios Swift Package dependency
+- Created `SubscriptionService.swift` — @MainActor singleton, isPro state, purchase/restore methods, 25-tx limit check, RevenueCat delegate for reactive updates
+- Created `PaywallView.swift` — Reusable paywall with annual (pre-selected, "BEST VALUE" badge) and monthly plans, subscribe/restore buttons, error alerts, legal links
+- Created `OnboardingView.swift` — 3-page TabView(.page): "Track Your Stack", "Your Data, Your Device", "Stack Smarter" with "Start Free Trial" + "Continue with Free Plan"
+- Modified `StackTrackerApp.swift` — RevenueCat configure() in init, onboarding gate via @AppStorage("hasCompletedOnboarding")
+- Modified `SettingsView.swift` — Subscription section (Pro: "Active" + manage link; Free: "Upgrade to Pro"), import/export gated with lock icons
+- Modified `DCAAnalyticsView.swift` — Blur overlay + lock icon + "Unlock Pro" button for free users
+- Modified `AddressListView.swift` — Locked state with lock icon and "Unlock Pro" button
+- Modified `AddPurchaseView.swift` — 25-tx limit check in savePurchase(), "X free transactions remaining" counter
+- Modified `Package.swift` and `project.pbxproj` for SPM dependency and new file references
+- **Build: SUCCEEDED** (only pre-existing warnings in BlockchainService and CSVImportService)
+- **TODO:** Replace placeholder API key `"your_revenuecat_api_key_here"` in SubscriptionService.swift:17
+
+### API Decision
+- CoinGecko free tier stays for now (30 calls/min, ~10K/month)
+- Upgrade to Analyst plan ($129/mo) only if substantial user growth
+- No code changes needed for upgrade — just swap API key
+- Proxy server consideration deferred to post-launch
+
+---
+
 ## Next Steps (Backlog)
+- [ ] Replace RevenueCat placeholder API key (needs RevenueCat account setup)
+- [ ] Update privacy policy to disclose RevenueCat anonymous purchase data
+- [ ] App Privacy labels in App Store Connect
+- [ ] Light mode polish (ensure all screens look good in both modes)
+- [ ] App Store screenshots + metadata (description, keywords, subtitle)
+- [ ] TestFlight distribution (requires active developer account)
 - [ ] Milestones view (100K sats to 1 BTC progress bars)
 - [ ] Portfolio view: show transaction type badges, filter by type
 - [ ] Export: include transaction types in CSV export
 - [ ] Address auto-match: surface matches in UI ("This withdrawal matched your Cold Storage address")
 - [ ] Tax reporting: FIFO/LIFO cost basis methods, annual summary
-- [ ] Light mode polish (ensure all screens look good in both modes)
-- [ ] App Store prep: app icon, screenshots, privacy policy
-- [ ] TestFlight distribution
-- [ ] Real device testing (iPhone via USB)

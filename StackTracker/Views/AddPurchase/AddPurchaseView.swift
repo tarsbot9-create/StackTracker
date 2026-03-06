@@ -5,8 +5,11 @@ struct AddPurchaseView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var priceService = PriceService.shared
+    @ObservedObject private var subscriptionService = SubscriptionService.shared
+    @Query private var allPurchases: [Purchase]
 
     @State private var date = Date()
+    @State private var showPaywall = false
     @State private var inputMode: InputMode = .usd
     @State private var usdAmount = ""
     @State private var btcAmount = ""
@@ -197,6 +200,15 @@ struct AddPurchaseView: View {
                         .cornerRadius(12)
                     }
                     .disabled(!isValid)
+
+                    // Free tier remaining count
+                    if !subscriptionService.isPro {
+                        let remaining = subscriptionService.remainingFreeTransactions(currentCount: allPurchases.count)
+                        Text("\(remaining) free transactions remaining")
+                            .font(.caption)
+                            .foregroundColor(remaining <= 5 ? Theme.lossRed : Theme.textSecondary)
+                            .frame(maxWidth: .infinity)
+                    }
                 }
                 .padding(16)
             }
@@ -217,6 +229,9 @@ struct AddPurchaseView: View {
                     }
                 }
                 Button("Cancel", role: .cancel) {}
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
             }
             .overlay {
                 if showSuccess {
@@ -241,6 +256,11 @@ struct AddPurchaseView: View {
         let price = Double(pricePerBTC) ?? 0
         let btc = computedBTC
         guard btc > 0 && price > 0 else { return }
+
+        if !subscriptionService.canAddTransaction(currentCount: allPurchases.count) {
+            showPaywall = true
+            return
+        }
 
         let purchase = Purchase(
             date: date,

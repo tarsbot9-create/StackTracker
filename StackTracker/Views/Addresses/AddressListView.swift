@@ -5,8 +5,10 @@ struct AddressListView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \WatchedAddress.addedAt) private var addresses: [WatchedAddress]
     @ObservedObject private var priceService = PriceService.shared
+    @ObservedObject private var subscriptionService = SubscriptionService.shared
 
     @State private var showAddSheet = false
+    @State private var showPaywall = false
     @State private var showDeleteAlert = false
     @State private var addressToDelete: WatchedAddress?
 
@@ -17,93 +19,132 @@ struct AddressListView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
-                    if !addresses.isEmpty {
-                        // Total cold storage card
-                        VStack(spacing: 8) {
-                            Image(systemName: "lock.shield.fill")
-                                .font(.title2)
-                                .foregroundColor(Theme.bitcoinOrange)
+                if subscriptionService.isPro {
+                    VStack(spacing: 16) {
+                        if !addresses.isEmpty {
+                            // Total cold storage card
+                            VStack(spacing: 8) {
+                                Image(systemName: "lock.shield.fill")
+                                    .font(.title2)
+                                    .foregroundColor(Theme.bitcoinOrange)
 
-                            Text("Cold Storage Total")
-                                .font(.caption)
-                                .foregroundColor(Theme.textSecondary)
+                                Text("Cold Storage Total")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
 
-                            Text("\(Formatters.formatBTC(totalColdBalance)) BTC")
-                                .font(.system(.title2, design: .rounded, weight: .bold))
-                                .foregroundColor(Theme.bitcoinOrange)
+                                Text("\(Formatters.formatBTC(totalColdBalance)) BTC")
+                                    .font(.system(.title2, design: .rounded, weight: .bold))
+                                    .foregroundColor(Theme.bitcoinOrange)
 
-                            Text(Formatters.formatSats(totalColdBalance) + " sats")
-                                .font(.caption)
-                                .foregroundColor(Theme.textSecondary)
+                                Text(Formatters.formatSats(totalColdBalance) + " sats")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
 
-                            if priceService.currentPrice > 0 {
-                                Text(Formatters.formatUSD(totalColdBalance * priceService.currentPrice))
-                                    .font(.headline)
-                                    .foregroundColor(Theme.textPrimary)
+                                if priceService.currentPrice > 0 {
+                                    Text(Formatters.formatUSD(totalColdBalance * priceService.currentPrice))
+                                        .font(.headline)
+                                        .foregroundColor(Theme.textPrimary)
+                                }
                             }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(20)
-                        .background(Theme.cardBackground)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Theme.cardBorder, lineWidth: 1)
-                        )
-
-                        // Address cards
-                        ForEach(addresses) { addr in
-                            NavigationLink(destination: AddressDetailView(address: addr)) {
-                                addressCard(addr)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    } else {
-                        // Empty state
-                        VStack(spacing: 16) {
-                            Image(systemName: "lock.shield")
-                                .font(.system(size: 50))
-                                .foregroundColor(Theme.bitcoinOrange.opacity(0.5))
-
-                            Text("Track Cold Storage")
-                                .font(.title3.bold())
-                                .foregroundColor(Theme.textPrimary)
-
-                            Text("Add a Bitcoin address to track your cold storage balance alongside your exchange purchases. Read-only -- no private keys needed.")
-                                .font(.subheadline)
-                                .foregroundColor(Theme.textSecondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(40)
-                        .background(Theme.cardBackground)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Theme.cardBorder, lineWidth: 1)
-                        )
-                    }
-
-                    // Add button
-                    Button {
-                        showAddSheet = true
-                    } label: {
-                        Label("Add Address", systemImage: "plus.circle.fill")
-                            .font(.headline)
-                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Theme.bitcoinOrange)
+                            .padding(20)
+                            .background(Theme.cardBackground)
                             .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Theme.cardBorder, lineWidth: 1)
+                            )
+
+                            // Address cards
+                            ForEach(addresses) { addr in
+                                NavigationLink(destination: AddressDetailView(address: addr)) {
+                                    addressCard(addr)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        } else {
+                            // Empty state
+                            VStack(spacing: 16) {
+                                Image(systemName: "lock.shield")
+                                    .font(.system(size: 50))
+                                    .foregroundColor(Theme.bitcoinOrange.opacity(0.5))
+
+                                Text("Track Cold Storage")
+                                    .font(.title3.bold())
+                                    .foregroundColor(Theme.textPrimary)
+
+                                Text("Add a Bitcoin address to track your cold storage balance alongside your exchange purchases. Read-only -- no private keys needed.")
+                                    .font(.subheadline)
+                                    .foregroundColor(Theme.textSecondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(40)
+                            .background(Theme.cardBackground)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Theme.cardBorder, lineWidth: 1)
+                            )
+                        }
+
+                        // Add button
+                        Button {
+                            showAddSheet = true
+                        } label: {
+                            Label("Add Address", systemImage: "plus.circle.fill")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Theme.bitcoinOrange)
+                                .cornerRadius(12)
+                        }
                     }
+                    .padding()
+                } else {
+                    // Locked state for free users
+                    VStack(spacing: 20) {
+                        Spacer()
+                            .frame(height: 60)
+
+                        Image(systemName: "lock.shield.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(Theme.bitcoinOrange)
+
+                        Text("Cold Storage Tracking")
+                            .font(.title3.bold())
+                            .foregroundColor(Theme.textPrimary)
+
+                        Text("Monitor your Bitcoin addresses and track cold storage balances with StackTracker Pro.")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+
+                        Button {
+                            showPaywall = true
+                        } label: {
+                            Text("Unlock Pro")
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 32)
+                                .padding(.vertical, 12)
+                                .background(Theme.bitcoinOrange)
+                                .foregroundColor(.black)
+                                .cornerRadius(12)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
                 }
-                .padding()
             }
             .background(Theme.darkBackground)
             .navigationTitle("Addresses")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+            }
             .sheet(isPresented: $showAddSheet) {
                 AddAddressView()
             }
