@@ -35,6 +35,12 @@
 		A10026 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10026; };
 		A10027 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10027; };
 		A10028 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = P10002; };
+		A10029 /* TaxLotEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10029; };
+		A10030 /* TaxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10030; };
+		A10031 /* DisposalDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031; };
+		A10032 /* SellCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10032; };
+		A10033 /* OpenLotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033; };
+		A10034 /* TaxExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -66,6 +72,12 @@
 		B10025 /* SubscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionService.swift; sourceTree = "<group>"; };
 		B10026 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		B10027 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		B10029 /* TaxLotEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxLotEngine.swift; sourceTree = "<group>"; };
+		B10030 /* TaxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxView.swift; sourceTree = "<group>"; };
+		B10031 /* DisposalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisposalDetailView.swift; sourceTree = "<group>"; };
+		B10032 /* SellCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SellCalculatorView.swift; sourceTree = "<group>"; };
+		B10033 /* OpenLotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenLotsView.swift; sourceTree = "<group>"; };
+		B10034 /* TaxExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxExportService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,6 +132,8 @@
 			B10018 /* CSVImportService.swift */,
 			B10021 /* BlockchainService.swift */,
 			B10025 /* SubscriptionService.swift */,
+			B10029 /* TaxLotEngine.swift */,
+			B10034 /* TaxExportService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -153,6 +167,7 @@
 				E10087 /* Addresses */,
 				E10088 /* Onboarding */,
 				E10089 /* Paywall */,
+				E10090 /* Tax */,
 				E10009 /* Components */,
 			);
 			path = Views;
@@ -248,6 +263,17 @@
 				B10027 /* PaywallView.swift */,
 			);
 			path = Paywall;
+			sourceTree = "<group>";
+		};
+		E10090 /* Tax */ = {
+			isa = PBXGroup;
+			children = (
+				B10030 /* TaxView.swift */,
+				B10031 /* DisposalDetailView.swift */,
+				B10032 /* SellCalculatorView.swift */,
+				B10033 /* OpenLotsView.swift */,
+			);
+			path = Tax;
 			sourceTree = "<group>";
 		};
 		E10010 /* Products */ = {
@@ -359,6 +385,12 @@
 				A10025 /* SubscriptionService.swift in Sources */,
 				A10026 /* OnboardingView.swift in Sources */,
 				A10027 /* PaywallView.swift in Sources */,
+				A10029 /* TaxLotEngine.swift in Sources */,
+				A10030 /* TaxView.swift in Sources */,
+				A10031 /* DisposalDetailView.swift in Sources */,
+				A10032 /* SellCalculatorView.swift in Sources */,
+				A10033 /* OpenLotsView.swift in Sources */,
+				A10034 /* TaxExportService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

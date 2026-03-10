@@ -89,7 +89,11 @@ struct OnboardingView: View {
                 // Page 3: Start Free Trial + Continue Free
                 VStack(spacing: 12) {
                     Button {
+                        #if targetEnvironment(simulator)
+                        hasCompletedOnboarding = true
+                        #else
                         showPaywall = true
+                        #endif
                     } label: {
                         Text("Start Free Trial")
                             .fontWeight(.bold)

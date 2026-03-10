@@ -13,6 +13,11 @@ final class SubscriptionService: NSObject, ObservableObject {
     private let freeTransactionLimit = 25
 
     func configure() {
+        #if targetEnvironment(simulator)
+        // Auto-grant Pro in simulator for testing
+        self.isPro = true
+        return
+        #else
         // TODO: Replace with your RevenueCat API key
         Purchases.configure(withAPIKey: "your_revenuecat_api_key_here")
         Purchases.shared.delegate = self
@@ -20,18 +25,27 @@ final class SubscriptionService: NSObject, ObservableObject {
         Task {
             await refreshStatus()
         }
+        #endif
     }
 
     func refreshStatus() async {
+        #if targetEnvironment(simulator)
+        self.isPro = true
+        return
+        #else
         do {
             let customerInfo = try await Purchases.shared.customerInfo()
             self.isPro = customerInfo.entitlements[entitlementID]?.isActive == true
         } catch {
             // Keep current state on failure
         }
+        #endif
     }
 
     func fetchPackages() async {
+        #if targetEnvironment(simulator)
+        return
+        #else
         do {
             let offerings = try await Purchases.shared.offerings()
             if let current = offerings.current {
@@ -40,9 +54,14 @@ final class SubscriptionService: NSObject, ObservableObject {
         } catch {
             // Packages unavailable
         }
+        #endif
     }
 
     func purchase(_ package: Package) async -> Bool {
+        #if targetEnvironment(simulator)
+        self.isPro = true
+        return true
+        #else
         do {
             let result = try await Purchases.shared.purchase(package: package)
             let isActive = result.customerInfo.entitlements[entitlementID]?.isActive == true
@@ -59,9 +78,14 @@ final class SubscriptionService: NSObject, ObservableObject {
             self.purchaseError = error.localizedDescription
             return false
         }
+        #endif
     }
 
     func restorePurchases() async -> Bool {
+        #if targetEnvironment(simulator)
+        self.isPro = true
+        return true
+        #else
         do {
             let customerInfo = try await Purchases.shared.restorePurchases()
             let isActive = customerInfo.entitlements[entitlementID]?.isActive == true
@@ -72,6 +96,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             self.purchaseError = error.localizedDescription
             return false
         }
+        #endif
     }
 
     func canAddTransaction(currentCount: Int) -> Bool {

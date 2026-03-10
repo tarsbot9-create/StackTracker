@@ -65,7 +65,14 @@ struct StackTrackerApp: App {
         do {
             container = try ModelContainer(for: schema, migrationPlan: MigrationPlan.self, configurations: [config])
         } catch {
-            // Fallback: if migration fails, create fresh container
+            // Migration failed - delete old store and start fresh
+            let storeURL = config.url
+            try? FileManager.default.removeItem(at: storeURL)
+            // Also remove journal files
+            let walURL = storeURL.appendingPathExtension("wal")
+            let shmURL = storeURL.appendingPathExtension("shm")
+            try? FileManager.default.removeItem(at: walURL)
+            try? FileManager.default.removeItem(at: shmURL)
             container = try! ModelContainer(for: schema, configurations: [config])
         }
 
@@ -131,9 +138,9 @@ struct ContentView: View {
                     Label("Analytics", systemImage: "chart.bar.xaxis")
                 }
 
-            AddressListView()
+            TaxView()
                 .tabItem {
-                    Label("Addresses", systemImage: "lock.shield")
+                    Label("Taxes", systemImage: "doc.text.magnifyingglass")
                 }
 
             SettingsView()

@@ -19,6 +19,26 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    VStack(spacing: 6) {
+                        Image("AppLogo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 100, height: 100)
+                        Text("StackTracker")
+                            .font(.title3.bold())
+                        Text("Track your Bitcoin savings journey.")
+                            .font(.caption)
+                            .foregroundColor(Theme.textSecondary)
+                        Text("Your data never leaves your device.")
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                }
+
                 Section("Appearance") {
                     Picker("Theme", selection: $appearanceMode) {
                         Text("Dark").tag("dark")
@@ -145,24 +165,7 @@ struct SettingsView: View {
                     }
                 }
 
-                Section {
-                    VStack(spacing: 8) {
-                        Image(systemName: "bitcoinsign.circle.fill")
-                            .font(.largeTitle)
-                            .foregroundColor(Theme.bitcoinOrange)
-                        Text("StackTracker")
-                            .font(.headline)
-                        Text("Track your Bitcoin savings journey.")
-                            .font(.caption)
-                            .foregroundColor(Theme.textSecondary)
-                        Text("Your data never leaves your device.")
-                            .font(.caption2)
-                            .foregroundColor(Theme.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .listRowBackground(Color.clear)
-                }
+
             }
             .scrollContentBackground(.hidden)
             .background(Theme.darkBackground)

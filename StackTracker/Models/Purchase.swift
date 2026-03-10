@@ -19,6 +19,7 @@ final class Purchase {
     var notes: String
     var createdAt: Date
     var transactionTypeRaw: String
+    var isFlagged: Bool
 
     var transactionType: TransactionType {
         get { TransactionType(rawValue: transactionTypeRaw) ?? .buy }
@@ -42,6 +43,7 @@ final class Purchase {
         self.notes = notes
         self.createdAt = .now
         self.transactionTypeRaw = transactionType.rawValue
+        self.isFlagged = false
     }
 
     var satsAmount: Int {

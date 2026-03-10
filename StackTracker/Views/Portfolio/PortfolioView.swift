@@ -7,34 +7,76 @@ struct PortfolioView: View {
     @ObservedObject private var priceService = PriceService.shared
 
     @State private var sortBy: SortOption = .dateDesc
-    @State private var filterWallet: String? = nil
-    @State private var purchaseToDelete: Purchase?
+    @State private var typeFilter: TypeFilter = .all
+    @State private var searchText: String = ""
     @State private var showAddPurchase = false
 
     enum SortOption: String, CaseIterable {
         case dateDesc = "Newest"
         case dateAsc = "Oldest"
         case amountDesc = "Largest"
-        case plDesc = "Best P&L"
-        case plAsc = "Worst P&L"
+        case amountAsc = "Smallest"
+        case plDesc = "Top Performers"
+        case plAsc = "Worst Performers"
     }
 
-    private var wallets: [String] {
-        Array(Set(purchases.map(\.walletName))).sorted()
+    enum TypeFilter: String, CaseIterable {
+        case all = "All"
+        case buys = "Buys"
+        case sells = "Sells"
+        case flagged = "Flagged"
     }
 
-    private var sortedPurchases: [Purchase] {
-        let base = purchases.filter { $0.transactionType == .buy || $0.transactionType == .sell }
-        let filtered = filterWallet == nil ? base : base.filter { $0.walletName == filterWallet }
+    private var filteredPurchases: [Purchase] {
         let price = priceService.currentPrice
 
-        switch sortBy {
-        case .dateDesc: return filtered.sorted { $0.date > $1.date }
-        case .dateAsc: return filtered.sorted { $0.date < $1.date }
-        case .amountDesc: return filtered.sorted { $0.btcAmount > $1.btcAmount }
-        case .plDesc: return filtered.sorted { $0.currentPL(price) > $1.currentPL(price) }
-        case .plAsc: return filtered.sorted { $0.currentPL(price) < $1.currentPL(price) }
+        // Type filter
+        var result: [Purchase]
+        switch typeFilter {
+        case .all:
+            result = purchases.filter { $0.transactionType == .buy || $0.transactionType == .sell }
+        case .buys:
+            result = purchases.filter { $0.transactionType == .buy }
+        case .sells:
+            result = purchases.filter { $0.transactionType == .sell }
+        case .flagged:
+            result = purchases.filter { $0.isFlagged && ($0.transactionType == .buy || $0.transactionType == .sell) }
         }
+
+        // Search
+        if !searchText.isEmpty {
+            let query = searchText.lowercased()
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateStyle = .medium
+
+            result = result.filter { purchase in
+                // Wallet name
+                if purchase.walletName.lowercased().contains(query) { return true }
+                // Notes
+                if purchase.notes.lowercased().contains(query) { return true }
+                // Date string
+                if dateFormatter.string(from: purchase.date).lowercased().contains(query) { return true }
+                // BTC amount
+                if String(format: "%.8f", purchase.btcAmount).contains(query) { return true }
+                // USD amount
+                if String(format: "%.2f", purchase.usdSpent).contains(query) { return true }
+                // Price
+                if String(format: "%.0f", purchase.pricePerBTC).contains(query) { return true }
+                return false
+            }
+        }
+
+        // Sort
+        switch sortBy {
+        case .dateDesc: result.sort { $0.date > $1.date }
+        case .dateAsc: result.sort { $0.date < $1.date }
+        case .amountDesc: result.sort { $0.btcAmount > $1.btcAmount }
+        case .amountAsc: result.sort { $0.btcAmount < $1.btcAmount }
+        case .plDesc: result.sort { $0.currentPL(price) > $1.currentPL(price) }
+        case .plAsc: result.sort { $0.currentPL(price) < $1.currentPL(price) }
+        }
+
+        return result
     }
 
     var body: some View {
@@ -51,11 +93,15 @@ struct PortfolioView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAddPurchase = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundColor(Theme.bitcoinOrange)
+                    HStack(spacing: 12) {
+                        sortMenu
+
+                        Button {
+                            showAddPurchase = true
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundColor(Theme.bitcoinOrange)
+                        }
                     }
                 }
             }
@@ -67,6 +113,30 @@ struct PortfolioView: View {
             await priceService.fetchCurrentPrice()
         }
     }
+
+    // MARK: - Sort Menu
+
+    private var sortMenu: some View {
+        Menu {
+            ForEach(SortOption.allCases, id: \.self) { option in
+                Button {
+                    withAnimation { sortBy = option }
+                } label: {
+                    HStack {
+                        Text(option.rawValue)
+                        if sortBy == option {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "arrow.up.arrow.down.circle")
+                .foregroundColor(Theme.bitcoinOrange)
+        }
+    }
+
+    // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: 16) {
@@ -83,86 +153,179 @@ struct PortfolioView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // MARK: - Purchase List
+
     private var purchaseList: some View {
         ScrollView {
             VStack(spacing: 12) {
-                // Filters
-                VStack(spacing: 10) {
-                    // Sort
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(SortOption.allCases, id: \.self) { option in
-                                Button {
-                                    withAnimation { sortBy = option }
-                                } label: {
-                                    Text(option.rawValue)
-                                        .font(.caption)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(sortBy == option ? Theme.bitcoinOrange : Theme.cardBackground)
-                                        .foregroundColor(sortBy == option ? .black : Theme.textSecondary)
-                                        .cornerRadius(8)
-                                }
-                            }
-                        }
-                    }
+                // Search bar
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(Theme.textSecondary)
+                    TextField("Search wallet, notes, amount...", text: $searchText)
+                        .font(.subheadline)
+                        .foregroundColor(Theme.textPrimary)
 
-                    // Wallet filter
-                    if wallets.count > 1 {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                Button {
-                                    withAnimation { filterWallet = nil }
-                                } label: {
-                                    Text("All")
-                                        .font(.caption)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(filterWallet == nil ? Theme.bitcoinOrange : Theme.cardBackground)
-                                        .foregroundColor(filterWallet == nil ? .black : Theme.textSecondary)
-                                        .cornerRadius(8)
-                                }
-
-                                ForEach(wallets, id: \.self) { wallet in
-                                    Button {
-                                        withAnimation { filterWallet = wallet }
-                                    } label: {
-                                        Text(wallet)
-                                            .font(.caption)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(filterWallet == wallet ? Theme.bitcoinOrange : Theme.cardBackground)
-                                            .foregroundColor(filterWallet == wallet ? .black : Theme.textSecondary)
-                                            .cornerRadius(8)
-                                    }
-                                }
-                            }
+                    if !searchText.isEmpty {
+                        Button {
+                            searchText = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(Theme.textSecondary)
                         }
                     }
                 }
+                .padding(10)
+                .background(Theme.cardBackground)
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Theme.cardBorder, lineWidth: 1)
+                )
                 .padding(.horizontal, 16)
 
-                // Purchase Cards
-                ForEach(sortedPurchases) { purchase in
-                    PurchaseCard(purchase: purchase, currentPrice: priceService.currentPrice)
+                // Type filter chips
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(TypeFilter.allCases, id: \.self) { filter in
+                            filterChip(filter)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+
+                // Results count
+                HStack {
+                    Text("\(filteredPurchases.count) transaction\(filteredPurchases.count == 1 ? "" : "s")")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                    Spacer()
+                    Text(sortBy.rawValue)
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                }
+                .padding(.horizontal, 20)
+
+                // Purchase cards
+                if filteredPurchases.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: typeFilter == .flagged ? "flag" : "magnifyingglass")
+                            .font(.system(size: 30))
+                            .foregroundColor(Theme.textSecondary.opacity(0.5))
+                        Text(typeFilter == .flagged ? "No flagged transactions" : "No results found")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.textSecondary)
+                        if typeFilter == .flagged {
+                            Text("Swipe right on a transaction to flag it.")
+                                .font(.caption)
+                                .foregroundColor(Theme.textSecondary.opacity(0.7))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(40)
+                } else {
+                    ForEach(filteredPurchases) { purchase in
+                        PurchaseCard(purchase: purchase, currentPrice: priceService.currentPrice, onToggleFlag: {
+                            toggleFlag(purchase)
+                        })
                         .contextMenu {
+                            Button {
+                                toggleFlag(purchase)
+                            } label: {
+                                Label(
+                                    purchase.isFlagged ? "Unflag" : "Flag",
+                                    systemImage: purchase.isFlagged ? "flag.slash" : "flag.fill"
+                                )
+                            }
+
                             Button(role: .destructive) {
                                 context.delete(purchase)
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
+                        .swipeActions(edge: .leading) {
+                            Button {
+                                toggleFlag(purchase)
+                            } label: {
+                                Label(
+                                    purchase.isFlagged ? "Unflag" : "Flag",
+                                    systemImage: purchase.isFlagged ? "flag.slash.fill" : "flag.fill"
+                                )
+                            }
+                            .tint(Theme.bitcoinOrange)
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                context.delete(purchase)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    }
                 }
-                .padding(.horizontal, 16)
             }
             .padding(.vertical, 12)
         }
     }
+
+    // MARK: - Filter Chip
+
+    private func filterChip(_ filter: TypeFilter) -> some View {
+        let isSelected = typeFilter == filter
+        let count: Int = {
+            switch filter {
+            case .all: return purchases.filter { $0.transactionType == .buy || $0.transactionType == .sell }.count
+            case .buys: return purchases.filter { $0.transactionType == .buy }.count
+            case .sells: return purchases.filter { $0.transactionType == .sell }.count
+            case .flagged: return purchases.filter { $0.isFlagged && ($0.transactionType == .buy || $0.transactionType == .sell) }.count
+            }
+        }()
+
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) { typeFilter = filter }
+        } label: {
+            HStack(spacing: 4) {
+                if filter == .flagged {
+                    Image(systemName: "flag.fill")
+                        .font(.caption2)
+                }
+                Text(filter.rawValue)
+                    .font(.subheadline.weight(.medium))
+                if count > 0 && filter != .all {
+                    Text("\(count)")
+                        .font(.caption2.bold())
+                        .foregroundColor(isSelected ? .black.opacity(0.6) : Theme.textSecondary)
+                }
+            }
+            .foregroundColor(isSelected ? .black : Theme.textSecondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(isSelected ? Theme.bitcoinOrange : Theme.cardBackground)
+            .cornerRadius(20)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(isSelected ? Color.clear : Theme.cardBorder, lineWidth: 1)
+            )
+        }
+    }
+
+    // MARK: - Actions
+
+    private func toggleFlag(_ purchase: Purchase) {
+        withAnimation {
+            purchase.isFlagged.toggle()
+        }
+    }
 }
+
+// MARK: - Purchase Card
 
 struct PurchaseCard: View {
     let purchase: Purchase
     let currentPrice: Double
+    var onToggleFlag: (() -> Void)? = nil
 
     private var pl: Double {
         guard currentPrice > 0 else { return 0 }
@@ -180,9 +343,17 @@ struct PurchaseCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(Formatters.formatDate(purchase.date))
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
+                    HStack(spacing: 6) {
+                        Text(Formatters.formatDate(purchase.date))
+                            .font(.caption)
+                            .foregroundColor(Theme.textSecondary)
+
+                        if purchase.isFlagged {
+                            Image(systemName: "flag.fill")
+                                .font(.caption2)
+                                .foregroundColor(Theme.bitcoinOrange)
+                        }
+                    }
                     Text(purchase.walletName)
                         .font(.caption2)
                         .foregroundColor(Theme.bitcoinOrange.opacity(0.7))
@@ -255,7 +426,7 @@ struct PurchaseCard: View {
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Theme.cardBorder, lineWidth: 1)
+                .stroke(purchase.isFlagged ? Theme.bitcoinOrange.opacity(0.3) : Theme.cardBorder, lineWidth: 1)
         )
     }
 }

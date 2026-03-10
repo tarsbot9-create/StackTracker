@@ -9,6 +9,8 @@ struct DCAAnalyticsView: View {
 
     @State private var showPaywall = false
 
+    @State private var showLotView = false
+
     private var summary: PortfolioSummary {
         PortfolioCalculator.summary(purchases: purchases, currentPrice: priceService.currentPrice)
     }
@@ -19,6 +21,40 @@ struct DCAAnalyticsView: View {
 
     private var buyPurchases: [Purchase] {
         purchases.filter { $0.transactionType == .buy }
+    }
+
+    // Realized vs Unrealized
+    private var disposalResults: [DisposalResult] {
+        TaxLotEngine.computeDisposals(purchases: purchases, method: .fifo)
+    }
+
+    private var realizedGain: Double {
+        disposalResults.reduce(0) { $0 + $1.totalGain }
+    }
+
+    private var unrealizedGain: Double {
+        // Get remaining lots after all disposals
+        let buys = purchases.filter { $0.transactionType == .buy }.sorted { $0.date < $1.date }
+        let disposals = purchases.filter { $0.transactionType == .sell || $0.transactionType == .payment }.sorted { $0.date < $1.date }.map { Disposal(from: $0) }
+        var lots = buys.map { TaxLot(from: $0) }
+        // Replay disposals
+        for disposal in disposals {
+            replayDisposal(disposal, lots: &lots)
+        }
+        // Unrealized = current value of remaining lots - their cost basis
+        let remainingCostBasis = lots.reduce(0.0) { $0 + $1.remainingBTC * $1.pricePerBTC }
+        let remainingValue = lots.reduce(0.0) { $0 + $1.remainingBTC } * priceService.currentPrice
+        return remainingValue - remainingCostBasis
+    }
+
+    private func replayDisposal(_ disposal: Disposal, lots: inout [TaxLot]) {
+        var remaining = disposal.btcAmount
+        while remaining > 0.00000001 {
+            guard let idx = lots.enumerated().filter({ $0.element.remainingBTC > 0.00000001 }).min(by: { $0.element.date < $1.element.date })?.offset else { break }
+            let consumed = min(remaining, lots[idx].remainingBTC)
+            lots[idx].remainingBTC -= consumed
+            remaining -= consumed
+        }
     }
 
     private var yearlyStacking: [(year: String, btc: Double, isCurrent: Bool)] {
@@ -153,6 +189,14 @@ struct DCAAnalyticsView: View {
                     )
                 }
 
+                // Realized vs Unrealized
+                if priceService.currentPrice > 0 {
+                    realizedVsUnrealizedCard
+                }
+
+                // Open Lots button
+                openLotsButton
+
                 // BTC Stacked by Year
                 chartCard(title: "BTC Stacked by Year") {
                     yearlyStackingChart
@@ -171,6 +215,119 @@ struct DCAAnalyticsView: View {
 
             }
             .padding(16)
+        }
+    }
+
+    // MARK: - Realized vs Unrealized Card
+    private var realizedVsUnrealizedCard: some View {
+        VStack(spacing: 14) {
+            HStack {
+                Image(systemName: "chart.pie.fill")
+                    .foregroundColor(Theme.bitcoinOrange)
+                Text("Gain Breakdown")
+                    .font(.headline)
+                    .foregroundColor(Theme.textPrimary)
+                Spacer()
+            }
+
+            Divider().background(Theme.cardBorder)
+
+            HStack(spacing: 0) {
+                // Realized
+                VStack(spacing: 6) {
+                    Text("Realized")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                    Text(Formatters.formatUSD(realizedGain))
+                        .font(.system(.title3, design: .rounded, weight: .bold))
+                        .foregroundColor(realizedGain >= 0 ? Theme.profitGreen : Theme.lossRed)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text("from sells")
+                        .font(.caption2)
+                        .foregroundColor(Theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+
+                Rectangle()
+                    .fill(Theme.cardBorder)
+                    .frame(width: 1, height: 50)
+
+                // Unrealized
+                VStack(spacing: 6) {
+                    Text("Unrealized")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                    Text(Formatters.formatUSD(unrealizedGain))
+                        .font(.system(.title3, design: .rounded, weight: .bold))
+                        .foregroundColor(unrealizedGain >= 0 ? Theme.profitGreen : Theme.lossRed)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text("open positions")
+                        .font(.caption2)
+                        .foregroundColor(Theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+
+            Divider().background(Theme.cardBorder)
+
+            // Total
+            HStack {
+                Text("Total P&L")
+                    .font(.subheadline)
+                    .foregroundColor(Theme.textSecondary)
+                Spacer()
+                Text(Formatters.formatUSD(realizedGain + unrealizedGain))
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                    .foregroundColor((realizedGain + unrealizedGain) >= 0 ? Theme.profitGreen : Theme.lossRed)
+            }
+        }
+        .padding(16)
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Theme.cardBorder, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Open Lots Button
+    private var openLotsButton: some View {
+        Button {
+            showLotView = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "tray.full.fill")
+                    .font(.title3)
+                    .foregroundColor(Theme.bitcoinOrange)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Open Lot Holdings")
+                        .font(.subheadline.bold())
+                        .foregroundColor(Theme.textPrimary)
+                    Text("View every lot with holding period and ST/LT status")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
+            }
+            .padding(14)
+            .background(Theme.cardBackground)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Theme.cardBorder, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showLotView) {
+            OpenLotsView()
         }
     }
 
