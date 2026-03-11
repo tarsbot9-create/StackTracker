@@ -41,6 +41,10 @@
 		A10032 /* SellCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10032; };
 		A10033 /* OpenLotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033; };
 		A10034 /* TaxExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034; };
+		A10035 /* WidgetDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10035; };
+		A10040 /* StackTrackerWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10040; };
+		A10041 /* StackTrackerWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10041; };
+		A10042 /* StackTrackerWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C10002; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -78,7 +82,43 @@
 		B10032 /* SellCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SellCalculatorView.swift; sourceTree = "<group>"; };
 		B10033 /* OpenLotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenLotsView.swift; sourceTree = "<group>"; };
 		B10034 /* TaxExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxExportService.swift; sourceTree = "<group>"; };
+		B10035 /* WidgetDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataService.swift; sourceTree = "<group>"; };
+		B10040 /* StackTrackerWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StackTrackerWidget.swift; sourceTree = "<group>"; };
+		B10041 /* StackTrackerWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StackTrackerWidgetBundle.swift; sourceTree = "<group>"; };
+		C10002 /* StackTrackerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StackTrackerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXContainerItemProxy section */
+		PROXY10001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = H10001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F10005;
+			remoteInfo = StackTrackerWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		DEP10001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F10005 /* StackTrackerWidgetExtension */;
+			targetProxy = PROXY10001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F10007 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A10042 /* StackTrackerWidgetExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		D10001 /* Frameworks */ = {
@@ -96,6 +136,7 @@
 			isa = PBXGroup;
 			children = (
 				E10002 /* StackTracker */,
+				E10091 /* StackTrackerWidget */,
 				E10010 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -134,6 +175,7 @@
 			B10025 /* SubscriptionService.swift */,
 			B10029 /* TaxLotEngine.swift */,
 			B10034 /* TaxExportService.swift */,
+			B10035 /* WidgetDataService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -276,10 +318,20 @@
 			path = Tax;
 			sourceTree = "<group>";
 		};
+		E10091 /* StackTrackerWidget */ = {
+			isa = PBXGroup;
+			children = (
+				B10040 /* StackTrackerWidget.swift */,
+				B10041 /* StackTrackerWidgetBundle.swift */,
+			);
+			path = StackTrackerWidget;
+			sourceTree = "<group>";
+		};
 		E10010 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				C10001 /* StackTracker.app */,
+				C10002 /* StackTrackerWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -294,10 +346,12 @@
 				F10002 /* Sources */,
 				D10001 /* Frameworks */,
 				F10003 /* Resources */,
+				F10007 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				DEP10001 /* PBXTargetDependency */,
 			);
 			name = StackTracker;
 			packageProductDependencies = (
@@ -306,6 +360,22 @@
 			productName = StackTracker;
 			productReference = C10001 /* StackTracker.app */;
 			productType = "com.apple.product-type.application";
+		};
+		F10005 /* StackTrackerWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = G10007;
+			buildPhases = (
+				F10004 /* Sources */,
+				F10006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = StackTrackerWidgetExtension;
+			productName = StackTrackerWidgetExtension;
+			productReference = C10002 /* StackTrackerWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -339,6 +409,7 @@
 			projectRoot = "";
 			targets = (
 				F10001 /* StackTracker */,
+				F10005 /* StackTrackerWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -349,6 +420,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10017 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F10006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -391,6 +469,16 @@
 				A10032 /* SellCalculatorView.swift in Sources */,
 				A10033 /* OpenLotsView.swift in Sources */,
 				A10034 /* TaxExportService.swift in Sources */,
+				A10035 /* WidgetDataService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F10004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10040 /* StackTrackerWidget.swift in Sources */,
+				A10041 /* StackTrackerWidgetBundle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -568,6 +656,58 @@
 			};
 			name = Release;
 		};
+		G10008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StackTrackerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = StackTracker;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stacktracker.app.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		G10009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StackTrackerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = StackTracker;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stacktracker.app.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -585,6 +725,15 @@
 			buildConfigurations = (
 				G10005 /* Debug */,
 				G10006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		G10007 /* Build configuration list for PBXNativeTarget "StackTrackerWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				G10008 /* Debug */,
+				G10009 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

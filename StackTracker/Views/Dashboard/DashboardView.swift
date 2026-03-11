@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct DashboardView: View {
     @Environment(\.modelContext) private var context
@@ -187,10 +188,26 @@ struct DashboardView: View {
         .task {
             await priceService.fetchCurrentPrice()
             await priceService.fetchChartData(days: 30)
+            updateWidgetData()
         }
         .refreshable {
             await priceService.fetchCurrentPrice()
             await priceService.fetchChartData(days: 30)
+            updateWidgetData()
         }
+        .onChange(of: purchases.count) { _, _ in
+            updateWidgetData()
+        }
+    }
+
+    /// Push current portfolio data to the widget via shared UserDefaults
+    private func updateWidgetData() {
+        let currentSummary = summary
+        WidgetDataService.update(
+            summary: currentSummary,
+            price: priceService.currentPrice,
+            change24h: priceService.change24h
+        )
+        WidgetCenter.shared.reloadTimelines(ofKind: "StackTrackerWidget")
     }
 }

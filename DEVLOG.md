@@ -184,15 +184,94 @@
 
 ---
 
-## Next Steps (Backlog)
+## Session Log: March 9, 2026
+
+### Tax Center (Phase 1)
+1. **TaxLotEngine** (`Services/TaxLotEngine.swift`)
+   - Full lot matching engine with FIFO, LIFO, HIFO accounting methods
+   - Processes sells and payments against purchase lots chronologically
+   - Holding period tracking (short-term < 365 days, long-term > 365 days)
+   - Tax year summaries with ST/LT gain/loss breakdown
+   - Sell simulator: replays existing disposals then simulates hypothetical sale
+
+2. **Taxes Tab** (replaced Addresses tab)
+   - FIFO/LIFO/HIFO segmented picker
+   - Year filter chips (All + per-year based on actual disposal dates)
+   - Capital gains summary card (net gain/loss, ST/LT breakdown)
+   - Pro-gated with paywall for free users
+   - Fixed "All" view bug: was showing "No taxable events in 0" instead of aggregating all years
+
+3. **Disposal Detail View**
+   - Full per-disposal breakdown: proceeds, cost basis, ST/LT split, method, lots consumed
+   - Each lot match shows purchase date, price, BTC consumed, holding days, gain/loss
+
+4. **Sell Calculator**
+   - "Available to sell" card with live price
+   - BTC input with 25%/50%/All quick-fill buttons
+   - Toggle current market price vs custom price
+   - FIFO/LIFO/HIFO picker
+   - Results: proceeds, cost basis, ST gain, LT gain, expandable lot breakdown
+
+### Tax Center (Phase 2)
+5. **Realized vs Unrealized Gain Dashboard** (Analytics tab)
+   - New "Gain Breakdown" card: realized gains (sells) vs unrealized gains (open positions)
+   - Total P&L combining both
+
+6. **Open Lots View** (Analytics tab)
+   - Sheet showing every remaining purchase lot after disposals
+   - Per-lot: purchase date, remaining BTC, cost basis, current gain/loss, holding days
+   - Short-term lots: progress bar showing days until long-term (X/365)
+   - Sort by: Oldest, Newest, Largest, Most Gain
+
+7. **Tax Year CSV Export** (Taxes tab toolbar menu)
+   - Form 8949 CSV: TurboTax/CPA-compatible (Description, Date Acquired, Date Sold, Proceeds, Cost Basis, Gain/Loss, Term)
+   - Summary CSV: per-disposal overview with ST/LT breakdown
+   - Respects year filter selection
+   - `TaxExportService.swift` for generation + temp file writing
+
+### Portfolio Upgrades
+8. **Search bar** - searches wallet name, notes, date, BTC amount, USD amount, price
+9. **Type filter chips** - All | Buys | Sells | Flagged (with count badges)
+10. **Sort menu** (toolbar) - Newest, Oldest, Largest, Smallest, Top Performers, Worst Performers
+11. **Flag system** - swipe right to flag/unflag, context menu, orange flag icon + border on flagged cards
+12. **Schema V3** - Added `isFlagged` field to Purchase model (lightweight migration with fresh DB fallback)
+
+### Settings & UI Polish
+13. **App logo** at top of Settings - transparent background, centered, no border
+14. **AppIcon** properly sized to 1024x1024 in asset catalog (was 1200x1028)
+15. **AppLogo image set** - separate from AppIcon for use in UI
+
+### Simulator Stability
+16. **RevenueCat full bypass** - all methods (configure, refreshStatus, fetchPackages, purchase, restore) wrapped in `#if targetEnvironment(simulator)` guards that auto-grant Pro
+17. **Onboarding bypass** - "Start Free Trial" skips paywall on simulator
+18. **DB migration fallback** - if migration fails, deletes old store + journal files and starts fresh
+
+### Bugs Fixed
+- "No taxable events in 0" when All year filter selected (was looking for current year instead of aggregating)
+- RevenueCat crashes on simulator (placeholder API key + unconfigured Purchases.shared)
+- Onboarding "Start Free Trial" crash (triggered RevenueCat purchase flow)
+- Schema migration "Duplicate version checksums" crash (V2 and V3 referenced same models)
+- App icon 1200x1028 instead of 1024x1024 (resized with sips)
+
+---
+
+## Next Steps (Priority Order)
+
+### Immediate (Next Session)
+- [ ] App icon refresh - make it more vibrant and polished
+- [ ] iOS Widgets - dashboard widget (total stack, price, P&L)
+- [ ] Form 8949 CSV export polish and testing with real data
+
+### Pre-Launch
 - [ ] Replace RevenueCat placeholder API key (needs RevenueCat account setup)
 - [ ] Update privacy policy to disclose RevenueCat anonymous purchase data
 - [ ] App Privacy labels in App Store Connect
 - [ ] Light mode polish (ensure all screens look good in both modes)
 - [ ] App Store screenshots + metadata (description, keywords, subtitle)
 - [ ] TestFlight distribution (requires active developer account)
+
+### Post-Launch
 - [ ] Milestones view (100K sats to 1 BTC progress bars)
-- [ ] Portfolio view: show transaction type badges, filter by type
+- [ ] Tax-loss harvesting scanner
+- [ ] Address auto-match: surface matches in UI
 - [ ] Export: include transaction types in CSV export
-- [ ] Address auto-match: surface matches in UI ("This withdrawal matched your Cold Storage address")
-- [ ] Tax reporting: FIFO/LIFO cost basis methods, annual summary
