@@ -326,8 +326,9 @@ struct CSVImportView: View {
     private func handlePickedFile(_ url: URL) {
         // asCopy: true means the file is already copied into our tmp directory -- full access
         guard let data = try? Data(contentsOf: url) else {
-            errorMessage = "Could not read the file."
+            errorMessage = "Could not read the file. It may have been moved or deleted."
             showError = true
+            Haptics.error()
             return
         }
 
@@ -335,8 +336,9 @@ struct CSVImportView: View {
                 ?? String(data: data, encoding: .ascii)
                 ?? String(data: data, encoding: .isoLatin1),
               !content.isEmpty else {
-            errorMessage = "File appears to be empty or unreadable."
+            errorMessage = "File appears to be empty or uses an unsupported encoding."
             showError = true
+            Haptics.error()
             return
         }
 
@@ -346,15 +348,22 @@ struct CSVImportView: View {
             }
             let parsed = try CSVImportService.parseCSVContent(content, existingPurchases: dupInfos)
             if parsed.purchases.isEmpty {
-                errorMessage = "No valid BTC purchases found in this file."
+                errorMessage = "No valid BTC purchases found in this file. Make sure it's a CSV exported from a supported exchange."
                 showError = true
+                Haptics.warning()
             } else {
                 importResult = parsed
                 parsedPurchases = parsed.purchases
+                Haptics.confirm()
+                // Auto-deselect duplicates
+                for i in parsedPurchases.indices where parsedPurchases[i].isDuplicate {
+                    parsedPurchases[i].isSelected = false
+                }
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Failed to parse CSV: \(error.localizedDescription)"
             showError = true
+            Haptics.error()
         }
     }
 
@@ -379,5 +388,6 @@ struct CSVImportView: View {
         importedCount = selected.count
         importComplete = true
         isImporting = false
+        Haptics.success()
     }
 }

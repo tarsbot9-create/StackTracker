@@ -272,6 +272,8 @@ struct AddPurchaseView: View {
 
         context.insert(purchase)
 
+        Haptics.success()
+
         // Reset form
         usdAmount = ""
         btcAmount = ""

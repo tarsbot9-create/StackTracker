@@ -1,105 +1,127 @@
-# StackTracker - App Store Metadata
+# App Store Metadata - StackTracker
 
 ## App Name
-StackTracker - Bitcoin DCA Tracker
+**StackTracker - Bitcoin DCA Tracker**
 
 ## Subtitle (30 chars max)
 Track Your Bitcoin Savings
 
-## Promotional Text (170 chars, can update anytime)
-Track your Bitcoin DCA journey with tax calculations, CSV import from all major exchanges, and cold storage monitoring. Your data never leaves your device.
+## Category
+Primary: Finance
+Secondary: Utilities
+
+## Keywords (100 chars max, comma separated)
+bitcoin,btc,dca,dollar cost average,stack sats,portfolio,tracker,tax,capital gains,cold storage
 
 ## Description
 
-**Stack smarter. Track every sat.**
+Track your Bitcoin savings journey with StackTracker - the privacy-first DCA tracker that keeps everything on your device.
 
-StackTracker is the privacy-first Bitcoin tracker built for DCA stackers. Whether you're buying weekly on Cash App or building cold storage, StackTracker shows you exactly where you stand.
+**Stack Tracking Made Simple**
+Log every Bitcoin purchase manually or import your history from Coinbase, Cash App, Strike, Swan, and River. See your total stack in BTC, sats, and USD with real-time price data.
 
-**YOUR STACK AT A GLANCE**
-- Live BTC price with 30-day chart
-- Total stack in BTC, sats, and USD
-- P&L tracking with cost basis analysis
-- Exchange vs cold storage breakdown
-- DCA streak counter
+**Portfolio Analytics**
+Visualize your DCA performance with interactive charts. Track cost basis over time, see your BTC stacked by year, and compare invested amount vs current value.
 
-**IMPORT FROM ANYWHERE**
-Auto-detect and import from Coinbase, Cash App, Strike, Swan, and River. Or add purchases manually. StackTracker handles buys, sells, withdrawals, and payments.
+**Tax Center (Pro)**
+Full capital gains tracking with FIFO, LIFO, and HIFO accounting methods. View every taxable event, simulate future sells with the Sell Calculator, and export IRS Form 8949 CSV for your CPA or TurboTax.
 
-**TAX CENTER**
-- FIFO, LIFO, and HIFO lot matching
-- Short-term vs long-term capital gains
-- Sell calculator: "What if I sell X BTC?"
-- Form 8949 CSV export for your CPA
-- Open lots with holding period tracking
+**Cold Storage Tracking**
+Add any Bitcoin address to monitor your cold storage balance. Auto-matches on-chain transactions to your exchange purchases with cost basis tracking.
 
-**ANALYTICS**
-- BTC stacked by year
-- Invested vs value over time
-- Realized + unrealized gain breakdown
-- Portfolio search, sort, and flagging
+**Key Features:**
+- Real-time BTC price with 30-day chart
+- CSV import from 5+ exchanges
+- DCA streak tracking
+- Flag and search transactions
+- FIFO/LIFO/HIFO tax lot matching
+- Form 8949 CSV export
+- Sell Calculator with tax impact
+- Dark and light mode
+- 100% on-device - no accounts, no servers
 
-**PRIVACY FIRST**
-Your data stays on your device. No accounts. No servers. No tracking. Just you and your stack.
+**Privacy First**
+Your financial data never leaves your device. No accounts. No servers. No tracking. Just you and your stack.
 
----
+Free to start. Upgrade to Pro for unlimited transactions, analytics, tax tools, and CSV import/export.
 
-**Free Features:**
-- Manual purchase tracking (up to 25)
-- Live price + chart
-- Dashboard with stack summary
+## Promotional Text (170 chars, can update without new review)
+Track your Bitcoin DCA journey. Import from Coinbase, Cash App & more. Tax-ready Form 8949 exports. Your data stays on your device.
 
-**Pro Features ($4.99/mo or $34.99/yr):**
-- Unlimited transactions
-- CSV import from all exchanges
-- Tax Center with lot matching + export
-- Analytics tab
-- Cold storage address tracking
-- CSV export
-
-## Keywords (100 chars)
-bitcoin,btc,dca,tracker,portfolio,sats,stacking,tax,crypto,wallet,savings,cost basis,cold storage
-
-## Categories
-- Primary: Finance
-- Secondary: Utilities
+## What's New (Version 1.0.0)
+Initial release! Track your Bitcoin savings with:
+- Manual purchase entry and CSV import
+- Real-time price tracking with 30-day chart
+- DCA analytics and performance charts
+- Tax Center with FIFO/LIFO/HIFO lot matching
+- Sell Calculator for tax impact simulation
+- Form 8949 CSV export
+- Cold storage address monitoring
+- Dark and light mode support
 
 ## Support URL
 https://tarsbot9-create.github.io/stacktracker-site/
+
+## Marketing URL
+https://stacktracker.app
 
 ## Privacy Policy URL
 https://tarsbot9-create.github.io/stacktracker-site/privacy.html
 
 ## App Privacy
 
-**Data Not Collected:**
-StackTracker does not collect any data from users. All purchase data, portfolio information, and settings remain on-device only.
+### Data Not Collected
+StackTracker does not collect any data from users. All data is stored locally on the device.
 
-**Data Linked to You:** None
-**Data Used to Track You:** None
+### Data Linked to You
+None
 
-*Note: RevenueCat may collect anonymous purchase/subscription data for payment processing. This should be disclosed under "Data Used to Track You" > "Purchase History" (linked to identity: No).*
+### Data Used to Track You
+None
+
+## Screenshot Specs
+
+### iPhone 6.7" (iPhone 15 Pro Max / 16 Pro Max)
+Resolution: 1290 x 2796 px
+
+### iPhone 6.1" (iPhone 15 Pro / 16 Pro)
+Resolution: 1179 x 2556 px
+
+### Suggested Screenshot Sequence (5-6 shots)
+1. **Dashboard** - Live BTC price, 30-day chart, stack summary with P&L
+2. **Portfolio** - Transaction list with search, filter chips, P&L per purchase
+3. **Analytics** - Charts showing BTC stacked by year, invested vs value
+4. **Tax Center** - Capital gains summary, FIFO/LIFO/HIFO picker, disposal list
+5. **Sell Calculator** - "What if I sell?" simulation with tax breakdown
+6. **Import** - CSV import preview with platform detection, transaction badges
+
+### Screenshot Tips
+- Use dark mode for primary screenshots (more visually striking)
+- Populate with realistic-looking data (multiple years of DCA purchases)
+- Show the app with a positive P&L for aspirational appeal
+- Consider device frame mockups for the hero image
+
+## Pricing
+
+### In-App Purchases
+- StackTracker Pro Monthly: $4.99/month
+- StackTracker Pro Annual: $34.99/year (saves 42%)
+
+### Free Tier
+- Manual purchase entry
+- Basic dashboard with price
+- Up to 25 transactions
+- Dark/light mode
+
+### Pro Tier
+- Unlimited transactions
+- CSV import/export
+- Full analytics
+- Tax Center (lot matching, sell calculator, Form 8949)
+- Cold storage tracking
 
 ## Age Rating
 4+ (no objectionable content)
 
-## Screenshot Strategy
-
-**Screens to capture (in order):**
-1. Dashboard - full stack with price chart, P&L, exchange/cold storage split
-2. Portfolio - list of purchases with search bar, filter chips, sort
-3. Tax Center - capital gains summary with FIFO/LIFO picker
-4. Sell Calculator - "what if" analysis with lot breakdown
-5. Analytics - stacked by year chart + gain breakdown
-6. CSV Import - platform auto-detect preview screen
-
-**Style:** Dark mode screenshots (matches the app's primary theme)
-**Device frames:** iPhone 15 Pro
-**Text overlays:** Short benefit statements above each screenshot
-
-### Suggested Screenshot Headlines
-1. "Your Stack. Your Stats."
-2. "Track Every Purchase"
-3. "Tax-Ready in Seconds"
-4. "Know Before You Sell"
-5. "See Your Progress"
-6. "Import in One Tap"
+## Copyright
+2026 StackTracker

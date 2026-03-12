@@ -42,6 +42,9 @@
 		A10033 /* OpenLotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033; };
 		A10034 /* TaxExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034; };
 		A10035 /* WidgetDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10035; };
+		A10036 /* TransactionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10036; };
+		A10037 /* NetworkErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10037; };
+		A10050 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10050; };
 		A10040 /* StackTrackerWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10040; };
 		A10041 /* StackTrackerWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10041; };
 		A10042 /* StackTrackerWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C10002; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -83,6 +86,9 @@
 		B10033 /* OpenLotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenLotsView.swift; sourceTree = "<group>"; };
 		B10034 /* TaxExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxExportService.swift; sourceTree = "<group>"; };
 		B10035 /* WidgetDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataService.swift; sourceTree = "<group>"; };
+		B10036 /* TransactionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDetailView.swift; sourceTree = "<group>"; };
+		B10037 /* NetworkErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkErrorView.swift; sourceTree = "<group>"; };
+		B10050 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		B10040 /* StackTrackerWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StackTrackerWidget.swift; sourceTree = "<group>"; };
 		B10041 /* StackTrackerWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StackTrackerWidgetBundle.swift; sourceTree = "<group>"; };
 		C10002 /* StackTrackerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StackTrackerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -192,6 +198,7 @@
 			isa = PBXGroup;
 			children = (
 				B10007 /* Formatters.swift */,
+				B10050 /* Haptics.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -227,6 +234,7 @@
 			isa = PBXGroup;
 			children = (
 				B10009 /* PortfolioView.swift */,
+				B10036 /* TransactionDetailView.swift */,
 			);
 			path = Portfolio;
 			sourceTree = "<group>";
@@ -287,6 +295,7 @@
 				B10014 /* BitcoinChartView.swift */,
 				B10015 /* PriceTickerView.swift */,
 				B10016 /* StatCard.swift */,
+				B10037 /* NetworkErrorView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -470,6 +479,9 @@
 				A10033 /* OpenLotsView.swift in Sources */,
 				A10034 /* TaxExportService.swift in Sources */,
 				A10035 /* WidgetDataService.swift in Sources */,
+				A10036 /* TransactionDetailView.swift in Sources */,
+				A10037 /* NetworkErrorView.swift in Sources */,
+				A10050 /* Haptics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

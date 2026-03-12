@@ -10,6 +10,7 @@ struct DCAAnalyticsView: View {
     @State private var showPaywall = false
 
     @State private var showLotView = false
+    @State private var showNetworkError = false
 
     private var summary: PortfolioSummary {
         PortfolioCalculator.summary(purchases: purchases, currentPrice: priceService.currentPrice)
@@ -126,8 +127,21 @@ struct DCAAnalyticsView: View {
             }
         }
         .task {
+            let priceBefore = priceService.currentPrice
             await priceService.fetchCurrentPrice()
             await priceService.fetchChartData(days: 365)
+            withAnimation {
+                showNetworkError = priceService.currentPrice == 0 && priceBefore == 0
+            }
+        }
+        .refreshable {
+            Haptics.tap()
+            let priceBefore = priceService.currentPrice
+            await priceService.fetchCurrentPrice()
+            await priceService.fetchChartData(days: 365)
+            withAnimation {
+                showNetworkError = priceService.currentPrice == 0 && priceBefore == 0
+            }
         }
     }
 
@@ -150,6 +164,18 @@ struct DCAAnalyticsView: View {
     private var analyticsContent: some View {
         ScrollView {
             VStack(spacing: 20) {
+                // Network error banner
+                if showNetworkError {
+                    NetworkErrorBanner("Couldn't fetch price data. Charts may be stale.") {
+                        let priceBefore = priceService.currentPrice
+                        await priceService.fetchCurrentPrice()
+                        await priceService.fetchChartData(days: 365)
+                        withAnimation {
+                            showNetworkError = priceService.currentPrice == 0 && priceBefore == 0
+                        }
+                    }
+                }
+
                 // Stats Grid - top of page
                 LazyVGrid(columns: [
                     GridItem(.flexible(), spacing: 12),

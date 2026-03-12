@@ -112,6 +112,10 @@ struct PortfolioView: View {
         .task {
             await priceService.fetchCurrentPrice()
         }
+        .refreshable {
+            Haptics.tap()
+            await priceService.fetchCurrentPrice()
+        }
     }
 
     // MARK: - Sort Menu
@@ -139,16 +143,39 @@ struct PortfolioView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "tray")
-                .font(.system(size: 50))
-                .foregroundColor(Theme.textSecondary.opacity(0.5))
-            Text("No purchases yet")
-                .font(.headline)
-                .foregroundColor(Theme.textSecondary)
-            Text("Add your first BTC purchase to start tracking.")
+        VStack(spacing: 20) {
+            Spacer().frame(height: 40)
+
+            Image(systemName: "list.bullet.rectangle.portrait")
+                .font(.system(size: 60))
+                .foregroundColor(Theme.bitcoinOrange.opacity(0.5))
+
+            Text("No Transactions Yet")
+                .font(.title3.bold())
+                .foregroundColor(Theme.textPrimary)
+
+            Text("Add your first Bitcoin purchase manually, or import from CSV to see your full transaction history.")
                 .font(.subheadline)
-                .foregroundColor(Theme.textSecondary.opacity(0.7))
+                .foregroundColor(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            Button {
+                showAddPurchase = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Add First Purchase")
+                        .fontWeight(.semibold)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(Theme.bitcoinOrange)
+                .foregroundColor(.black)
+                .cornerRadius(12)
+            }
+
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -225,9 +252,12 @@ struct PortfolioView: View {
                     .padding(40)
                 } else {
                     ForEach(filteredPurchases) { purchase in
-                        PurchaseCard(purchase: purchase, currentPrice: priceService.currentPrice, onToggleFlag: {
-                            toggleFlag(purchase)
-                        })
+                        NavigationLink(destination: TransactionDetailView(purchase: purchase)) {
+                            PurchaseCard(purchase: purchase, currentPrice: priceService.currentPrice, onToggleFlag: {
+                                toggleFlag(purchase)
+                            })
+                        }
+                        .buttonStyle(.plain)
                         .contextMenu {
                             Button {
                                 toggleFlag(purchase)
@@ -284,6 +314,7 @@ struct PortfolioView: View {
         }()
 
         return Button {
+            Haptics.select()
             withAnimation(.easeInOut(duration: 0.2)) { typeFilter = filter }
         } label: {
             HStack(spacing: 4) {
@@ -314,6 +345,7 @@ struct PortfolioView: View {
     // MARK: - Actions
 
     private func toggleFlag(_ purchase: Purchase) {
+        Haptics.tap()
         withAnimation {
             purchase.isFlagged.toggle()
         }

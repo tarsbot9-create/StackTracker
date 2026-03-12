@@ -46,6 +46,9 @@ struct SettingsView: View {
                         Text("Auto").tag("auto")
                     }
                     .pickerStyle(.segmented)
+                    .onChange(of: appearanceMode) { _, _ in
+                        Haptics.select()
+                    }
                 }
 
                 Section("Display") {
@@ -165,6 +168,15 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Legal") {
+                    Link(destination: URL(string: "https://tarsbot9-create.github.io/stacktracker-site/privacy.html")!) {
+                        Label("Privacy Policy", systemImage: "hand.raised")
+                    }
+
+                    Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
+                        Label("Terms of Use", systemImage: "doc.text")
+                    }
+                }
 
             }
             .scrollContentBackground(.hidden)
@@ -194,7 +206,7 @@ struct SettingsView: View {
     }
 
     private func exportCSV() {
-        var csv = "Date,BTC Amount,Sats,Price Per BTC,USD Spent,Wallet,Notes\n"
+        var csv = "Date,Type,BTC Amount,Sats,Price Per BTC,USD Spent,Wallet,Notes,Flagged\n"
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -202,12 +214,14 @@ struct SettingsView: View {
         for purchase in purchases {
             let line = [
                 dateFormatter.string(from: purchase.date),
+                purchase.transactionType.rawValue,
                 String(purchase.btcAmount),
                 String(purchase.satsAmount),
                 String(format: "%.2f", purchase.pricePerBTC),
                 String(format: "%.2f", purchase.usdSpent),
-                purchase.walletName,
-                purchase.notes.replacingOccurrences(of: ",", with: ";")
+                purchase.walletName.replacingOccurrences(of: ",", with: ";"),
+                purchase.notes.replacingOccurrences(of: ",", with: ";"),
+                purchase.isFlagged ? "yes" : ""
             ].joined(separator: ",")
             csv += line + "\n"
         }
@@ -216,9 +230,11 @@ struct SettingsView: View {
         try? csv.write(to: tempURL, atomically: true, encoding: .utf8)
         csvURL = tempURL
         showExportSheet = true
+        Haptics.success()
     }
 
     private func deleteAllData() {
+        Haptics.heavy()
         for purchase in purchases {
             context.delete(purchase)
         }

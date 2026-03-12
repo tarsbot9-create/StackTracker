@@ -28,6 +28,16 @@ enum Theme {
     // These stay the same in both modes
     static let profitGreen = Color(hex: "3FB950")
     static let lossRed = Color(hex: "F85149")
+
+    // Accent variations for light mode readability
+    static let bitcoinOrangeText = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(hex: "F7931A") : UIColor(hex: "D47B15")
+    })
+
+    // Subtle tint for backgrounds in light mode (slightly warm) vs dark (navy)
+    static let surfaceTint = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(hex: "161B22") : UIColor(hex: "FFF8F0")
+    })
 }
 
 extension UIColor {

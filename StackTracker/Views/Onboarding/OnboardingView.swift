@@ -7,9 +7,9 @@ struct OnboardingView: View {
     @State private var showPaywall = false
 
     private let pages: [(icon: String, title: String, description: String)] = [
-        ("bitcoinsign.circle.fill", "Track Your Stack", "Log every Bitcoin purchase and watch your stack grow over time. Support for all major exchanges and wallets."),
+        ("bitcoinsign.circle.fill", "Track Your Stack", "Log every Bitcoin purchase and watch your stack grow over time. Import from Coinbase, Cash App, Strike, Swan, and more."),
         ("chart.line.uptrend.xyaxis", "Visualize Progress", "See your DCA performance with interactive charts, cost basis tracking, and portfolio analytics."),
-        ("lock.shield.fill", "Cold Storage Tracking", "Monitor your Bitcoin addresses and track cold storage balances — read-only, no private keys needed.")
+        ("doc.text.magnifyingglass", "Tax Center", "Track capital gains with FIFO, LIFO, or HIFO accounting. Simulate sells and export Form 8949 for your CPA.")
     ]
 
     var body: some View {

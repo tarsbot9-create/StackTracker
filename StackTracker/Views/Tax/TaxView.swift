@@ -106,6 +106,10 @@ struct TaxView: View {
         .task {
             await priceService.fetchCurrentPrice()
         }
+        .refreshable {
+            Haptics.tap()
+            await priceService.fetchCurrentPrice()
+        }
     }
 
     // MARK: - Locked State
@@ -192,6 +196,9 @@ struct TaxView: View {
                 }
             }
             .pickerStyle(.segmented)
+            .onChange(of: method) { _, _ in
+                Haptics.select()
+            }
         }
     }
 
@@ -211,6 +218,7 @@ struct TaxView: View {
     private func yearChip(label: String, year: Int?) -> some View {
         let isSelected = selectedYear == year
         return Button {
+            Haptics.select()
             withAnimation(.easeInOut(duration: 0.2)) {
                 selectedYear = year
             }
@@ -502,8 +510,11 @@ struct TaxView: View {
         let csv = TaxExportService.generateForm8949CSV(disposals: disposals, year: selectedYear)
         let yearLabel = selectedYear.map { String($0) } ?? "all-years"
         if let url = TaxExportService.writeToTempFile(csv: csv, filename: "stacktracker-form8949-\(yearLabel).csv") {
+            Haptics.success()
             exportURL = url
             showExportSheet = true
+        } else {
+            Haptics.error()
         }
     }
 
@@ -511,8 +522,11 @@ struct TaxView: View {
         let csv = TaxExportService.generateSummaryCSV(disposals: disposals, year: selectedYear)
         let yearLabel = selectedYear.map { String($0) } ?? "all-years"
         if let url = TaxExportService.writeToTempFile(csv: csv, filename: "stacktracker-tax-summary-\(yearLabel).csv") {
+            Haptics.success()
             exportURL = url
             showExportSheet = true
+        } else {
+            Haptics.error()
         }
     }
 }

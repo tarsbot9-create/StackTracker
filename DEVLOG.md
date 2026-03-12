@@ -255,23 +255,56 @@
 
 ---
 
-## Next Steps (Priority Order)
+## Session Log: March 10, 2026
 
-### Immediate (Next Session)
-- [ ] App icon refresh - make it more vibrant and polished
-- [ ] iOS Widgets - dashboard widget (total stack, price, P&L)
-- [ ] Form 8949 CSV export polish and testing with real data
+### App Icon Polish
+- Recentered S logo from original 1200x1028 source (was off-center by ~89px)
+- Removed dark line artifact on right side caused by non-square crop
+- Boosted color saturation (+45%), contrast (+20%), brightness (+10%)
+- Added subtle blue-indigo gradient to dark background
+- Updated transparent in-app logo (AppLogo.imageset) to match
+- Note: Professional vector icon recommended before App Store launch ($30-50 Fiverr)
 
-### Pre-Launch
-- [ ] Replace RevenueCat placeholder API key (needs RevenueCat account setup)
-- [ ] Update privacy policy to disclose RevenueCat anonymous purchase data
-- [ ] App Privacy labels in App Store Connect
-- [ ] Light mode polish (ensure all screens look good in both modes)
-- [ ] App Store screenshots + metadata (description, keywords, subtitle)
-- [ ] TestFlight distribution (requires active developer account)
+### Widget Extension
+- Built small (price + stack) and medium (price + portfolio P&L) widgets
+- CoinGecko price fetch every 15 min with cached fallback
+- Embedded in main app via PlugIns with proper Info.plist
+- WidgetDataService for shared UserDefaults (needs App Groups from developer account)
+- Price data confirmed flowing on simulator
+- Portfolio data requires App Groups configuration (post-developer account activation)
 
-### Post-Launch
+### Bugs Fixed
+- App icon dark line on right side (non-square source crop)
+- App icon S logo off-center (cropped around content center, not image center)
+- Widget "not found" in widget picker (missing embed build phase + Info.plist)
+- Widget install crash "Invalid placeholder attributes" (needed NSExtension plist)
+
+---
+
+## Launch Checklist (Priority Order)
+
+### Build Before Launch (TARS overnight work)
+- [ ] 1. Light mode polish — every screen must look good in both modes
+- [ ] 2. Empty states — clean "get started" state on every tab when no data exists
+- [ ] 3. Onboarding update — replace cold storage slide with Tax Center feature
+- [ ] 4. Error handling — CSV import failures, network errors, edge cases hardened
+- [ ] 5. Haptic feedback — subtle taps on flag, filter toggle, import complete
+- [ ] 6. Pull-to-refresh — Dashboard and Portfolio tabs
+- [ ] 7. Transaction detail view — tap purchase card for full details + edit
+- [ ] 8. App Store screenshots — 5-6 shots for 6.7" and 6.1" displays
+- [ ] 9. App icon — consider Fiverr for professional vector version
+- [ ] 10. Form 8949 CSV export — polish and test with real data
+
+### Blocked by Developer Account
+- [ ] App Groups configuration (widget portfolio data)
+- [ ] RevenueCat real API key
+- [ ] App Store Connect listing
+- [ ] Privacy policy update for RevenueCat
+- [ ] App Privacy labels
+- [ ] TestFlight build
+
+### Post-Launch (v1.1+)
 - [ ] Milestones view (100K sats to 1 BTC progress bars)
 - [ ] Tax-loss harvesting scanner
-- [ ] Address auto-match: surface matches in UI
-- [ ] Export: include transaction types in CSV export
+- [ ] xPub/multi-address wallet tracking
+- [ ] Export: include transaction types in CSV

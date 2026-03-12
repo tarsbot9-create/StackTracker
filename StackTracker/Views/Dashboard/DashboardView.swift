@@ -11,10 +11,19 @@ struct DashboardView: View {
         PortfolioCalculator.summary(purchases: purchases, currentPrice: priceService.currentPrice)
     }
 
+    @State private var showNetworkError = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    // Network error banner
+                    if showNetworkError {
+                        NetworkErrorBanner("Couldn't fetch BTC price. Check your connection.") {
+                            await fetchPriceData()
+                        }
+                    }
+
                     // BTC Price Ticker
                     PriceTickerView(
                         price: priceService.currentPrice,
@@ -186,18 +195,26 @@ struct DashboardView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .task {
-            await priceService.fetchCurrentPrice()
-            await priceService.fetchChartData(days: 30)
-            updateWidgetData()
+            await fetchPriceData()
         }
         .refreshable {
-            await priceService.fetchCurrentPrice()
-            await priceService.fetchChartData(days: 30)
-            updateWidgetData()
+            Haptics.tap()
+            await fetchPriceData()
         }
         .onChange(of: purchases.count) { _, _ in
             updateWidgetData()
         }
+    }
+
+    private func fetchPriceData() async {
+        let priceBefore = priceService.currentPrice
+        await priceService.fetchCurrentPrice()
+        await priceService.fetchChartData(days: 30)
+        // Show error if price is still 0 after fetch
+        withAnimation {
+            showNetworkError = priceService.currentPrice == 0 && priceBefore == 0
+        }
+        updateWidgetData()
     }
 
     /// Push current portfolio data to the widget via shared UserDefaults
