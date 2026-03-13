@@ -356,9 +356,66 @@
 
 ### Post-Launch (v1.1+)
 - [ ] iCloud sync/backup (SwiftData + CloudKit)
-- [ ] Price alerts / milestone notifications (retention feature)
-- [ ] Rate prompt after 2 weeks
-- [ ] Milestones view (100K sats to 1 BTC progress bars)
+- [x] Price alerts / milestone notifications (retention feature) ✅ (Mar 13)
+- [x] Rate prompt after 2 weeks ✅ (Mar 13)
+- [x] Milestones view integrated into Dashboard ✅ (Mar 13)
+- [x] DCA Calculator (Dashboard toolbar) ✅ (Mar 13)
+- [x] Sats-per-dollar in price ticker ✅ (Mar 13)
 - [ ] Tax-loss harvesting scanner
 - [ ] xPub/multi-address wallet tracking
 - [x] Export: include transaction types + flagged status in CSV ✅ (Mar 12)
+
+---
+
+## Session Log: March 13, 2026 (Overnight)
+
+### New Features Built
+1. **NotificationService** (`Services/NotificationService.swift`)
+   - Price alerts with local notifications (set target price + direction above/below)
+   - Milestone achievement notifications (100K sats through 1 BTC)
+   - Persists alerts to UserDefaults, tracks triggered state
+   - Notification permission request flow
+
+2. **ReviewPromptService** (`Services/ReviewPromptService.swift`)
+   - StoreKit SKStoreReviewController integration
+   - Conditions: 14+ days since install, 5+ transactions
+   - 90-day cooldown between prompts, max 3/year
+   - Records first launch date in UserDefaults
+
+3. **PriceAlertsView** (`Views/Settings/PriceAlertsView.swift`)
+   - Full UI for managing price alerts
+   - Add alerts with pre-filled round number near current price
+   - Shows active vs triggered alerts
+   - Swipe to delete, notification permission prompt
+   - Accessible from Settings > Notifications section
+
+4. **Dashboard Milestones Card**
+   - "Next Milestone" progress card shows on Dashboard below DCA streak
+   - Progress bar, sats remaining, percentage complete
+   - Taps through to full MilestonesView
+   - Special "WHOLE COINER" state when all milestones complete
+
+5. **DCA Calculator** (`Views/Dashboard/DCACalculatorView.swift`)
+   - Weekly DCA planning tool accessible from Dashboard toolbar
+   - Quick presets ($25-$500) or custom amount input
+   - Time horizon slider (1-60 months)
+   - Projects BTC/sats at current price
+   - Shows sats per dollar, monthly cost, total invested
+
+6. **Sats-per-Dollar Display**
+   - Added "X sats/$1" below BTC price on Dashboard ticker
+   - Quick reference for sats-denominated thinking
+
+### Integration Points
+- Dashboard `.task` now checks: review prompt, milestone notifications, price alerts
+- StackTrackerApp `init()` records first launch for ReviewPromptService
+- Settings shows Notifications section with Price Alerts link + active alert count
+- All files added to Xcode project (.pbxproj) and build verified
+
+### Infrastructure
+- Updated overnight cron job from Kalshi (deprecated) to StackTracker focus
+- BTC & macro research saved to workspace/research/2026-03-13-btc-macro.md
+
+### Build Status
+- **BUILD SUCCEEDED** — 3 commits pushed to main
+- Commits: price alerts + milestones + review prompt, DCA calculator, sats-per-dollar
