@@ -12,6 +12,7 @@ struct DashboardView: View {
     }
 
     @State private var showNetworkError = false
+    @State private var showDCACalculator = false
 
     var body: some View {
         NavigationStack {
@@ -196,6 +197,30 @@ struct DashboardView: View {
             .background(Theme.darkBackground)
             .navigationTitle("StackTracker")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showDCACalculator = true
+                        Haptics.tap()
+                    } label: {
+                        Image(systemName: "function")
+                            .foregroundColor(Theme.bitcoinOrange)
+                    }
+                }
+            }
+            .sheet(isPresented: $showDCACalculator) {
+                NavigationStack {
+                    DCACalculatorView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Done") {
+                                    showDCACalculator = false
+                                }
+                                .foregroundColor(Theme.bitcoinOrange)
+                            }
+                        }
+                }
+            }
         }
         .task {
             await fetchPriceData()
