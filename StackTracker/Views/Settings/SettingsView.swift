@@ -159,7 +159,7 @@ struct SettingsView: View {
                             .foregroundColor(Theme.textSecondary)
                     }
 
-                    Link(destination: URL(string: "https://stacktracker.app")!) {
+                    Link(destination: URL(string: "https://tarsbot9-create.github.io/stacktracker-site/")!) {
                         Label("Website", systemImage: "globe")
                     }
 

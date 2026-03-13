@@ -19,7 +19,7 @@ struct PaywallView: View {
         ("square.and.arrow.down", "CSV Import & Export", "Import from Coinbase, Strike, Swan & more"),
         ("infinity", "Unlimited Transactions", "Track your full stacking history"),
         ("chart.bar.xaxis", "Advanced Analytics", "DCA charts, cost basis, and performance"),
-        ("lock.shield", "Cold Storage Tracking", "Monitor your Bitcoin addresses")
+        ("doc.text.magnifyingglass", "Tax Center & Sell Simulator", "Capital gains tracking and what-if scenarios")
     ]
 
     var body: some View {
@@ -240,7 +240,7 @@ struct PaywallView: View {
                 .font(.caption2)
                 .foregroundColor(Theme.textSecondary)
 
-            Link("Privacy Policy", destination: URL(string: "https://stacktracker.app/privacy")!)
+            Link("Privacy Policy", destination: URL(string: "https://tarsbot9-create.github.io/stacktracker-site/privacy.html")!)
                 .font(.caption2)
                 .foregroundColor(Theme.textSecondary)
         }

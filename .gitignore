@@ -1,1 +1,7 @@
 .build/
+
+build/
+*.xcarchive
+
+*.xcuserstate
+xcuserdata/

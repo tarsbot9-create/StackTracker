@@ -116,11 +116,11 @@ struct TaxView: View {
 
     private var lockedState: some View {
         VStack(spacing: 20) {
-            Spacer().frame(height: 60)
+            Spacer().frame(height: 40)
 
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.system(size: 60))
-                .foregroundColor(Theme.bitcoinOrange)
+                .foregroundColor(Theme.bitcoinOrange.opacity(0.5))
 
             Text("Tax Center")
                 .font(.title3.bold())
@@ -135,17 +135,21 @@ struct TaxView: View {
             Button {
                 showPaywall = true
             } label: {
-                Text("Unlock Pro")
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 12)
-                    .background(Theme.bitcoinOrange)
-                    .foregroundColor(.black)
-                    .cornerRadius(12)
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.open.fill")
+                    Text("Unlock Pro")
+                        .fontWeight(.semibold)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(Theme.bitcoinOrange)
+                .foregroundColor(.black)
+                .cornerRadius(12)
             }
+
+            Spacer()
         }
-        .frame(maxWidth: .infinity)
-        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Tax Content

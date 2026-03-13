@@ -12,12 +12,23 @@ final class SubscriptionService: NSObject, ObservableObject {
     private let entitlementID = "pro"
     private let freeTransactionLimit = 25
 
+    /// Detect if running via TestFlight (sandbox receipt)
+    private var isTestFlight: Bool {
+        Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
+    }
+
     func configure() {
         #if targetEnvironment(simulator)
         // Auto-grant Pro in simulator for testing
         self.isPro = true
         return
         #else
+        // Auto-grant Pro in TestFlight for testing
+        if isTestFlight {
+            self.isPro = true
+            return
+        }
+
         // TODO: Replace with your RevenueCat API key
         Purchases.configure(withAPIKey: "your_revenuecat_api_key_here")
         Purchases.shared.delegate = self
