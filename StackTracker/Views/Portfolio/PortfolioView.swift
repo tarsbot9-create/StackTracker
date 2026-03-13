@@ -375,17 +375,9 @@ struct PurchaseCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(Formatters.formatDate(purchase.date))
-                            .font(.caption)
-                            .foregroundColor(Theme.textSecondary)
-
-                        if purchase.isFlagged {
-                            Image(systemName: "flag.fill")
-                                .font(.caption2)
-                                .foregroundColor(Theme.bitcoinOrange)
-                        }
-                    }
+                    Text(Formatters.formatDate(purchase.date))
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
                     Text(purchase.walletName)
                         .font(.caption2)
                         .foregroundColor(Theme.bitcoinOrange.opacity(0.7))
@@ -398,14 +390,25 @@ struct PurchaseCard: View {
                         Image(systemName: isProfit ? "arrow.up.right" : "arrow.down.right")
                             .font(.caption2)
                         Text(Formatters.formatPercent(pl))
-                            .font(.subheadline.bold())
+                            .font(.system(.subheadline, design: .rounded, weight: .bold))
                     }
                     .foregroundColor(isProfit ? Theme.profitGreen : Theme.lossRed)
 
                     Text(Formatters.formatUSD(plUSD))
-                        .font(.caption)
+                        .font(.system(.caption, design: .rounded))
                         .foregroundColor(isProfit ? Theme.profitGreen.opacity(0.7) : Theme.lossRed.opacity(0.7))
                 }
+
+                // Flag button
+                Button {
+                    onToggleFlag?()
+                } label: {
+                    Image(systemName: purchase.isFlagged ? "flag.fill" : "flag")
+                        .font(.caption)
+                        .foregroundColor(purchase.isFlagged ? Theme.bitcoinOrange : Theme.textSecondary.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 6)
             }
 
             Divider().background(Theme.cardBorder)
@@ -416,10 +419,10 @@ struct PurchaseCard: View {
                         .font(.caption2)
                         .foregroundColor(Theme.textSecondary)
                     Text(Formatters.formatBTC(purchase.btcAmount) + " BTC")
-                        .font(.subheadline.bold())
+                        .font(.system(.subheadline, design: .monospaced, weight: .bold))
                         .foregroundColor(Theme.textPrimary)
                     Text(Formatters.formatSats(purchase.btcAmount) + " sats")
-                        .font(.caption2)
+                        .font(.system(.caption2, design: .monospaced))
                         .foregroundColor(Theme.textSecondary)
                 }
 
@@ -430,7 +433,7 @@ struct PurchaseCard: View {
                         .font(.caption2)
                         .foregroundColor(Theme.textSecondary)
                     Text(Formatters.formatUSD(purchase.usdSpent))
-                        .font(.subheadline)
+                        .font(.system(.subheadline, design: .rounded))
                         .foregroundColor(Theme.textPrimary)
                 }
 
@@ -441,7 +444,7 @@ struct PurchaseCard: View {
                         .font(.caption2)
                         .foregroundColor(Theme.textSecondary)
                     Text(Formatters.formatUSDCompact(purchase.pricePerBTC))
-                        .font(.subheadline)
+                        .font(.system(.subheadline, design: .rounded))
                         .foregroundColor(Theme.textPrimary)
                 }
             }
