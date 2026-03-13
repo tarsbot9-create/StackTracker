@@ -334,18 +334,30 @@
 - [x] 6. Pull-to-refresh — all 4 data tabs (Dashboard, Portfolio, Analytics, Taxes) ✅ (Mar 10+12)
 - [x] 7. Transaction detail view — full detail + edit + delete + flag ✅ (Mar 9)
 - [ ] 8. App Store screenshots — 5-6 shots for 6.7" and 6.1" displays (needs developer account + real device/SimRecorder)
-- [ ] 9. App icon — consider Fiverr for professional vector version
+- [x] 9. App icon — "Stacked S" 1024x1024 PNG in asset catalog ✅ (Mar 5, confirmed Mar 12)
 - [x] 10. Form 8949 CSV export — working with FIFO/LIFO/HIFO, per-lot breakdown ✅ (Mar 9)
 
-### Blocked by Developer Account
-- [ ] App Groups configuration (widget portfolio data)
-- [ ] RevenueCat real API key
-- [ ] App Store Connect listing
-- [ ] Privacy policy update for RevenueCat
-- [ ] App Privacy labels
-- [ ] TestFlight build
+### Developer Account — UNBLOCKED ✅ (Mar 12)
+- [x] Apple Developer Program activated (Team ID: V6GW78L4D3) ✅
+- [x] Bundle IDs registered: com.joeystanley.stacktracker + .widget ✅
+- [x] Device registered (Joey's iPhone 17) ✅
+- [x] Xcode signing configured (automatic, team V6GW78L4D3) ✅
+- [x] App Store Connect listing created ✅
+- [x] TestFlight live — build 4 (1.0) latest ✅
+- [x] Export compliance automated (ITSAppUsesNonExemptEncryption=NO) ✅
+- [x] TestFlight Pro bypass for testing ✅
+
+### Remaining Before Launch
+- [ ] RevenueCat real API key + create subscription products in App Store Connect
+- [ ] Pricing strategy review (consider lower price for launch)
+- [ ] App Store screenshots (6.7" + 6.1" sets)
+- [ ] Remove TestFlight Pro bypass before public release
+- [ ] App Privacy labels in App Store Connect
 
 ### Post-Launch (v1.1+)
+- [ ] iCloud sync/backup (SwiftData + CloudKit)
+- [ ] Price alerts / milestone notifications (retention feature)
+- [ ] Rate prompt after 2 weeks
 - [ ] Milestones view (100K sats to 1 BTC progress bars)
 - [ ] Tax-loss harvesting scanner
 - [ ] xPub/multi-address wallet tracking
