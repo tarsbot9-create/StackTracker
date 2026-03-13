@@ -77,6 +77,7 @@ struct StackTrackerApp: App {
         }
 
         SubscriptionService.shared.configure()
+        ReviewPromptService.recordLaunch()
     }
 
     var body: some Scene {

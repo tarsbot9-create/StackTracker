@@ -66,6 +66,23 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Notifications") {
+                    NavigationLink {
+                        PriceAlertsView()
+                    } label: {
+                        HStack {
+                            Label("Price Alerts", systemImage: "bell.badge")
+                            Spacer()
+                            let activeCount = NotificationService.shared.priceAlerts.filter { !$0.isTriggered }.count
+                            if activeCount > 0 {
+                                Text("\(activeCount)")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
+                        }
+                    }
+                }
+
                 Section("Data") {
                     Button {
                         if subscriptionService.isPro {

@@ -45,6 +45,9 @@
 		A10036 /* TransactionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10036; };
 		A10037 /* NetworkErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10037; };
 		A10050 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10050; };
+		A10051 /* ReviewPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10051; };
+		A10052 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10052; };
+		A10053 /* PriceAlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10053; };
 		A10040 /* StackTrackerWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10040; };
 		A10041 /* StackTrackerWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10041; };
 		A10042 /* StackTrackerWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C10002; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -89,6 +92,9 @@
 		B10036 /* TransactionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDetailView.swift; sourceTree = "<group>"; };
 		B10037 /* NetworkErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkErrorView.swift; sourceTree = "<group>"; };
 		B10050 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
+		B10051 /* ReviewPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPromptService.swift; sourceTree = "<group>"; };
+		B10052 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		B10053 /* PriceAlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceAlertsView.swift; sourceTree = "<group>"; };
 		B10040 /* StackTrackerWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StackTrackerWidget.swift; sourceTree = "<group>"; };
 		B10041 /* StackTrackerWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StackTrackerWidgetBundle.swift; sourceTree = "<group>"; };
 		C10002 /* StackTrackerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StackTrackerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -182,6 +188,8 @@
 			B10029 /* TaxLotEngine.swift */,
 			B10034 /* TaxExportService.swift */,
 			B10035 /* WidgetDataService.swift */,
+			B10051 /* ReviewPromptService.swift */,
+			B10052 /* NotificationService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -285,6 +293,7 @@
 			isa = PBXGroup;
 			children = (
 				B10013 /* SettingsView.swift */,
+				B10053 /* PriceAlertsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -482,6 +491,9 @@
 				A10036 /* TransactionDetailView.swift in Sources */,
 				A10037 /* NetworkErrorView.swift in Sources */,
 				A10050 /* Haptics.swift in Sources */,
+				A10051 /* ReviewPromptService.swift in Sources */,
+				A10052 /* NotificationService.swift in Sources */,
+				A10053 /* PriceAlertsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

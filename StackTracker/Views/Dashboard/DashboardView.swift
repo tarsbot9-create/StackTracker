@@ -161,6 +161,9 @@ struct DashboardView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(Theme.cardBorder, lineWidth: 1)
                         )
+
+                        // Next Milestone Card
+                        nextMilestoneCard
                     } else {
                         // Empty state
                         VStack(spacing: 16) {
@@ -196,6 +199,17 @@ struct DashboardView: View {
         }
         .task {
             await fetchPriceData()
+
+            // Check review prompt conditions
+            ReviewPromptService.requestReviewIfAppropriate(transactionCount: purchases.count)
+
+            // Check milestone notifications
+            NotificationService.shared.checkMilestoneReached(totalSats: summary.totalSats)
+
+            // Check price alerts
+            if priceService.currentPrice > 0 {
+                NotificationService.shared.checkPriceAlerts(currentPrice: priceService.currentPrice)
+            }
         }
         .refreshable {
             Haptics.tap()
@@ -203,6 +217,104 @@ struct DashboardView: View {
         }
         .onChange(of: purchases.count) { _, _ in
             updateWidgetData()
+        }
+    }
+
+    // MARK: - Next Milestone Card
+
+    @ViewBuilder
+    private var nextMilestoneCard: some View {
+        let totalSats = summary.totalSats
+        let milestoneTargets = [
+            100_000, 500_000, 1_000_000, 5_000_000,
+            10_000_000, 25_000_000, 50_000_000, 100_000_000
+        ]
+        let milestoneNames: [Int: String] = [
+            100_000: "100K Sats",
+            500_000: "500K Sats",
+            1_000_000: "1M Sats",
+            5_000_000: "5M Sats",
+            10_000_000: "0.1 BTC",
+            25_000_000: "0.25 BTC",
+            50_000_000: "0.5 BTC",
+            100_000_000: "1 BTC"
+        ]
+
+        if let nextTarget = milestoneTargets.first(where: { $0 > totalSats }) {
+            let progress = Double(totalSats) / Double(nextTarget)
+            let remaining = nextTarget - totalSats
+            let name = milestoneNames[nextTarget] ?? "\(nextTarget) sats"
+
+            NavigationLink(destination: MilestonesView()) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "trophy")
+                            .font(.caption)
+                            .foregroundColor(Theme.bitcoinOrange)
+                        Text("Next Milestone: \(name)")
+                            .font(.caption.bold())
+                            .foregroundColor(Theme.textPrimary)
+                        Spacer()
+                        Text("\(Int(progress * 100))%")
+                            .font(.caption.bold())
+                            .foregroundColor(Theme.bitcoinOrange)
+                    }
+
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Theme.darkBackground)
+                                .frame(height: 5)
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Theme.bitcoinOrange)
+                                .frame(width: geo.size.width * progress, height: 5)
+                                .animation(.easeOut(duration: 0.5), value: progress)
+                        }
+                    }
+                    .frame(height: 5)
+
+                    Text("\(Formatters.satsFormatter.string(from: NSNumber(value: remaining)) ?? "0") sats to go")
+                        .font(.caption2)
+                        .foregroundColor(Theme.textSecondary)
+                }
+                .padding(14)
+                .background(Theme.cardBackground)
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Theme.cardBorder, lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+        } else if totalSats >= 100_000_000 {
+            // Whole coiner - show celebration
+            NavigationLink(destination: MilestonesView()) {
+                HStack {
+                    Image(systemName: "trophy.fill")
+                        .font(.title3)
+                        .foregroundColor(Theme.bitcoinOrange)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("WHOLE COINER")
+                            .font(.caption.bold())
+                            .foregroundColor(Theme.bitcoinOrange)
+                        Text("All milestones complete!")
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(Theme.textSecondary)
+                }
+                .padding(14)
+                .background(Theme.cardBackground)
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Theme.bitcoinOrange.opacity(0.3), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
 
