@@ -6,6 +6,11 @@ struct PriceTickerView: View {
 
     var isPositive: Bool { change24h >= 0 }
 
+    private var satsPerDollar: Int {
+        guard price > 0 else { return 0 }
+        return Int(100_000_000 / price)
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
@@ -15,6 +20,11 @@ struct PriceTickerView: View {
                 Text(Formatters.formatUSDCompact(price))
                     .font(.system(.title2, design: .rounded, weight: .bold))
                     .foregroundColor(Theme.textPrimary)
+                if satsPerDollar > 0 {
+                    Text("\(Formatters.satsFormatter.string(from: NSNumber(value: satsPerDollar)) ?? "0") sats/$1")
+                        .font(.caption2)
+                        .foregroundColor(Theme.bitcoinOrange.opacity(0.8))
+                }
             }
 
             Spacer()
