@@ -146,24 +146,11 @@ struct CSVImportView: View {
 
     private func previewView(_ result: CSVImportResult) -> some View {
         VStack(spacing: 0) {
+            if importComplete {
+                importSuccessView
+            } else {
             // Summary header
             VStack(spacing: 8) {
-                if importComplete {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 48))
-                        .foregroundColor(.green)
-                    Text("\(importedCount) purchases imported!")
-                        .font(.title3.bold())
-                        .foregroundColor(Theme.textPrimary)
-                    Button("Done") { dismiss() }
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 32)
-                        .padding(.vertical, 12)
-                        .background(Theme.bitcoinOrange)
-                        .cornerRadius(10)
-                        .padding(.top, 8)
-                } else {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Detected: \(result.platform.rawValue)")
@@ -206,11 +193,9 @@ struct CSVImportView: View {
                             .foregroundColor(Theme.textSecondary)
                     }
                 }
-            }
-            .padding()
-            .background(Theme.cardBackground)
+                .padding()
+                .background(Theme.cardBackground)
 
-            if !importComplete {
                 // Purchase list
                 List {
                     ForEach(Array(parsedPurchases.enumerated()), id: \.element.id) { index, purchase in
@@ -221,6 +206,112 @@ struct CSVImportView: View {
                 .scrollContentBackground(.hidden)
             }
         }
+    }
+
+    // MARK: - Import Success View
+
+    @State private var showCheckmark = false
+    @State private var showContent = false
+
+    private var importSuccessView: some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            VStack(spacing: 28) {
+                // Animated checkmark circle
+                ZStack {
+                    Circle()
+                        .fill(Theme.bitcoinOrange.opacity(0.12))
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(showCheckmark ? 1.0 : 0.5)
+
+                    Circle()
+                        .fill(Theme.bitcoinOrange.opacity(0.06))
+                        .frame(width: 160, height: 160)
+                        .scaleEffect(showCheckmark ? 1.0 : 0.3)
+
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 72, weight: .medium))
+                        .foregroundStyle(Theme.bitcoinOrange)
+                        .scaleEffect(showCheckmark ? 1.0 : 0.0)
+                }
+
+                VStack(spacing: 8) {
+                    Text("Import Complete")
+                        .font(.title2.bold())
+                        .foregroundColor(Theme.textPrimary)
+
+                    Text("\(importedCount) transactions imported")
+                        .font(.body)
+                        .foregroundColor(Theme.textSecondary)
+                }
+                .opacity(showContent ? 1.0 : 0.0)
+                .offset(y: showContent ? 0 : 12)
+
+                // Stats row
+                HStack(spacing: 24) {
+                    let buys = parsedPurchases.filter { $0.isSelected && $0.transactionType == .buy }.count
+                    let sells = parsedPurchases.filter { $0.isSelected && ($0.transactionType == .sell || $0.transactionType == .payment) }.count
+                    let transfers = parsedPurchases.filter { $0.isSelected && $0.transactionType == .withdrawal }.count
+
+                    if buys > 0 {
+                        statPill(count: buys, label: "Buys", color: .green)
+                    }
+                    if sells > 0 {
+                        statPill(count: sells, label: "Sells", color: Theme.lossRed)
+                    }
+                    if transfers > 0 {
+                        statPill(count: transfers, label: "Transfers", color: .blue)
+                    }
+                }
+                .opacity(showContent ? 1.0 : 0.0)
+                .offset(y: showContent ? 0 : 12)
+            }
+
+            Spacer()
+
+            // Done button
+            Button {
+                Haptics.tap()
+                dismiss()
+            } label: {
+                Text("Done")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Theme.bitcoinOrange)
+                    .cornerRadius(14)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 40)
+            .opacity(showContent ? 1.0 : 0.0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.darkBackground)
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                showCheckmark = true
+            }
+            withAnimation(.easeOut(duration: 0.4).delay(0.3)) {
+                showContent = true
+            }
+        }
+    }
+
+    private func statPill(count: Int, label: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Text("\(count)")
+                .font(.title3.bold())
+                .foregroundColor(color)
+            Text(label)
+                .font(.caption)
+                .foregroundColor(Theme.textSecondary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(color.opacity(0.1))
+        .cornerRadius(10)
     }
 
     private func purchaseRow(_ purchase: ParsedPurchase, index: Int) -> some View {
