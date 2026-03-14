@@ -245,28 +245,74 @@ struct DashboardView: View {
 
     // MARK: - Next Milestone Card
 
+    /// Named milestones for early stackers (under 1 BTC)
+    private static let namedMilestones: [(sats: Int, name: String)] = [
+        (100_000, "100K Sats"),
+        (500_000, "500K Sats"),
+        (1_000_000, "1M Sats"),
+        (5_000_000, "5M Sats"),
+        (10_000_000, "0.1 BTC"),
+        (25_000_000, "0.25 BTC"),
+        (50_000_000, "0.5 BTC"),
+        (100_000_000, "1 BTC"),
+    ]
+
+    /// The ultimate milestone: 21 BTC = one-millionth of total supply
+    private static let ultimateMilestoneSats = 2_100_000_000 // 21 BTC
+
+    /// Compute the next milestone dynamically based on current stack
+    private func nextMilestone(totalBTC: Double, totalSats: Int) -> (targetSats: Int, name: String)? {
+        // Check named milestones first (under 1 BTC)
+        if let named = Self.namedMilestones.first(where: { $0.sats > totalSats }) {
+            return (named.sats, named.name)
+        }
+
+        // Already past 21 BTC - no more milestones
+        if totalSats >= Self.ultimateMilestoneSats {
+            return nil
+        }
+
+        // Dynamic milestones based on stack size (BTC)
+        // Find the next "nice number" above current stack
+        let increment: Double
+        if totalBTC < 10 {
+            increment = 0.5   // 1 BTC - 10 BTC: steps of 0.5
+        } else {
+            increment = 1.0   // 10 BTC - 21 BTC: steps of 1.0
+        }
+
+        let nextBTC = (totalBTC / increment).rounded(.up) * increment
+        // Make sure we actually moved forward
+        let targetBTC = nextBTC <= totalBTC ? nextBTC + increment : nextBTC
+
+        // Cap at 21 BTC
+        let cappedBTC = min(targetBTC, 21.0)
+        let targetSats = Int(cappedBTC * 100_000_000)
+
+        // Format the name
+        let name: String
+        if cappedBTC == 21.0 {
+            name = "21 BTC"
+        } else if cappedBTC == cappedBTC.rounded() {
+            name = "\(Int(cappedBTC)) BTC"
+        } else {
+            name = String(format: "%.1f BTC", cappedBTC)
+        }
+
+        return (targetSats, name)
+    }
+
     @ViewBuilder
     private var nextMilestoneCard: some View {
         let totalSats = summary.totalSats
-        let milestoneTargets = [
-            100_000, 500_000, 1_000_000, 5_000_000,
-            10_000_000, 25_000_000, 50_000_000, 100_000_000
-        ]
-        let milestoneNames: [Int: String] = [
-            100_000: "100K Sats",
-            500_000: "500K Sats",
-            1_000_000: "1M Sats",
-            5_000_000: "5M Sats",
-            10_000_000: "0.1 BTC",
-            25_000_000: "0.25 BTC",
-            50_000_000: "0.5 BTC",
-            100_000_000: "1 BTC"
-        ]
+        let totalBTC = summary.totalBTC
 
-        if let nextTarget = milestoneTargets.first(where: { $0 > totalSats }) {
-            let progress = Double(totalSats) / Double(nextTarget)
-            let remaining = nextTarget - totalSats
-            let name = milestoneNames[nextTarget] ?? "\(nextTarget) sats"
+        if let milestone = nextMilestone(totalBTC: totalBTC, totalSats: totalSats) {
+            let progress = Double(totalSats) / Double(milestone.targetSats)
+            let remaining = milestone.targetSats - totalSats
+
+            let isUltimate = milestone.targetSats == Self.ultimateMilestoneSats
+            let subtitle = isUltimate ? "One in a Million" : nil
 
             NavigationLink(destination: MilestonesView()) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -274,9 +320,16 @@ struct DashboardView: View {
                         Image(systemName: "trophy")
                             .font(.caption)
                             .foregroundColor(Theme.bitcoinOrange)
-                        Text("Next Milestone: \(name)")
-                            .font(.caption.bold())
-                            .foregroundColor(Theme.textPrimary)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Next Milestone: \(milestone.name)")
+                                .font(.caption.bold())
+                                .foregroundColor(Theme.textPrimary)
+                            if let subtitle {
+                                Text(subtitle)
+                                    .font(.caption2)
+                                    .foregroundColor(Theme.bitcoinOrange.opacity(0.7))
+                            }
+                        }
                         Spacer()
                         Text("\(Int(progress * 100))%")
                             .font(.caption.bold())
@@ -290,15 +343,22 @@ struct DashboardView: View {
                                 .frame(height: 5)
                             RoundedRectangle(cornerRadius: 3)
                                 .fill(Theme.bitcoinOrange)
-                                .frame(width: geo.size.width * progress, height: 5)
+                                .frame(width: geo.size.width * min(progress, 1.0), height: 5)
                                 .animation(.easeOut(duration: 0.5), value: progress)
                         }
                     }
                     .frame(height: 5)
 
-                    Text("\(Formatters.satsFormatter.string(from: NSNumber(value: remaining)) ?? "0") sats to go")
-                        .font(.caption2)
-                        .foregroundColor(Theme.textSecondary)
+                    let remainingBTC = Double(remaining) / 100_000_000.0
+                    if remainingBTC >= 0.01 {
+                        Text("\(Formatters.formatBTC(remainingBTC)) BTC to go")
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+                    } else {
+                        Text("\(Formatters.satsFormatter.string(from: NSNumber(value: remaining)) ?? "0") sats to go")
+                            .font(.caption2)
+                            .foregroundColor(Theme.textSecondary)
+                    }
                 }
                 .padding(14)
                 .background(Theme.cardBackground)
@@ -309,18 +369,18 @@ struct DashboardView: View {
                 )
             }
             .buttonStyle(.plain)
-        } else if totalSats >= 100_000_000 {
-            // Whole coiner - show celebration
+        } else if totalSats >= Self.ultimateMilestoneSats {
+            // 21+ BTC - ultimate achievement
             NavigationLink(destination: MilestonesView()) {
                 HStack {
                     Image(systemName: "trophy.fill")
                         .font(.title3)
                         .foregroundColor(Theme.bitcoinOrange)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("WHOLE COINER")
+                        Text("ONE IN A MILLION")
                             .font(.caption.bold())
                             .foregroundColor(Theme.bitcoinOrange)
-                        Text("All milestones complete!")
+                        Text("21 BTC - All milestones complete!")
                             .font(.caption2)
                             .foregroundColor(Theme.textSecondary)
                     }
