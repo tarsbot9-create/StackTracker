@@ -13,6 +13,7 @@ struct DashboardView: View {
 
     @State private var showNetworkError = false
     @State private var showDCACalculator = false
+    @State private var show7dChange = false
 
     var body: some View {
         NavigationStack {
@@ -80,6 +81,11 @@ struct DashboardView: View {
                                 .font(.subheadline.bold())
                                 .foregroundColor(summary.isProfit ? Theme.profitGreen : Theme.lossRed)
                                 .padding(.top, 2)
+
+                                // Cost basis change indicator
+                                if priceService.currentPrice > 0 && summary.averageCostBasis > 0 {
+                                    costBasisChangeView
+                                }
 
                                 // Exchange vs Cold Storage breakdown
                                 if summary.coldStorageBTC > 0 {
@@ -341,6 +347,49 @@ struct DashboardView: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    // MARK: - Cost Basis Change
+
+    private var costBasisChangeView: some View {
+        let change24h = priceService.change24h / 100.0 // convert from percent
+        let valueChange24h = summary.currentValue * change24h / (1 + change24h)
+
+        // For 7d, estimate from chart data
+        let change7d: Double = {
+            guard let firstPoint = priceService.chartData.first(where: {
+                $0.date >= Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+            }), firstPoint.price > 0 else { return 0 }
+            return (priceService.currentPrice - firstPoint.price) / firstPoint.price
+        }()
+        let valueChange7d = summary.currentValue * change7d / (1 + change7d)
+
+        let activeChange = show7dChange ? change7d : change24h
+        let activeValueChange = show7dChange ? valueChange7d : valueChange24h
+        let isUp = activeChange >= 0
+
+        return Button {
+            Haptics.select()
+            withAnimation(.easeInOut(duration: 0.2)) { show7dChange.toggle() }
+        } label: {
+            HStack(spacing: 6) {
+                Text(show7dChange ? "7d" : "24h")
+                    .font(.caption2.bold())
+                    .foregroundColor(Theme.textSecondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Theme.darkBackground)
+                    .cornerRadius(4)
+
+                Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
+                    .font(.caption2)
+                Text("\(Formatters.formatUSD(abs(activeValueChange))) (\(Formatters.formatPercent(activeChange * 100)))")
+                    .font(.caption.bold())
+            }
+            .foregroundColor(isUp ? Theme.profitGreen.opacity(0.8) : Theme.lossRed.opacity(0.8))
+            .padding(.top, 2)
+        }
+        .buttonStyle(.plain)
     }
 
     private func fetchPriceData() async {

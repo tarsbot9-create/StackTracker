@@ -16,10 +16,11 @@ struct PaywallView: View {
     }
 
     private let features: [(icon: String, title: String, description: String)] = [
+        ("target", "Cost Basis Tracking", "Know your exact cost basis across every purchase"),
         ("square.and.arrow.down", "CSV Import & Export", "Import from Coinbase, Strike, Swan & more"),
         ("infinity", "Unlimited Transactions", "Track your full stacking history"),
-        ("chart.bar.xaxis", "Advanced Analytics", "DCA charts, cost basis, and performance"),
-        ("doc.text.magnifyingglass", "Tax Center & Sell Simulator", "Capital gains tracking and what-if scenarios")
+        ("chart.bar.xaxis", "Advanced Analytics", "DCA charts, performance, and 24h/7d changes"),
+        ("doc.text.magnifyingglass", "Tax Center & Sell Simulator", "FIFO/LIFO/HIFO lot matching and Form 8949 export")
     ]
 
     var body: some View {

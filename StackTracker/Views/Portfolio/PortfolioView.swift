@@ -183,11 +183,96 @@ struct PortfolioView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // MARK: - Portfolio Summary Card
+
+    private var portfolioSummaryCard: some View {
+        let buys = purchases.filter { $0.transactionType == .buy }
+        let totalInvested = buys.reduce(0.0) { $0 + $1.usdSpent }
+        let totalBTC = buys.reduce(0.0) { $0 + $1.btcAmount } - purchases.filter { $0.transactionType == .sell }.reduce(0.0) { $0 + $1.btcAmount }
+        let currentValue = totalBTC * priceService.currentPrice
+        let totalPL = currentValue - totalInvested
+        let plPercent = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0
+        let avgCost = totalBTC > 0 ? totalInvested / totalBTC : 0
+        let isProfit = totalPL >= 0
+
+        return HStack(spacing: 0) {
+            // Left: invested vs value
+            VStack(spacing: 6) {
+                VStack(spacing: 2) {
+                    Text("Invested")
+                        .font(.caption2)
+                        .foregroundColor(Theme.textSecondary)
+                    Text(Formatters.formatUSD(totalInvested))
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                        .foregroundColor(Theme.textPrimary)
+                }
+                VStack(spacing: 2) {
+                    Text("Value")
+                        .font(.caption2)
+                        .foregroundColor(Theme.textSecondary)
+                    Text(Formatters.formatUSD(currentValue))
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                        .foregroundColor(Theme.textPrimary)
+                }
+            }
+            .frame(maxWidth: .infinity)
+
+            // Divider
+            Rectangle()
+                .fill(Theme.cardBorder)
+                .frame(width: 1, height: 50)
+
+            // Center: P/L
+            VStack(spacing: 4) {
+                Text("Total P/L")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+                Text(Formatters.formatUSD(totalPL))
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                    .foregroundColor(isProfit ? Theme.profitGreen : Theme.lossRed)
+                Text(Formatters.formatPercent(plPercent))
+                    .font(.caption2.bold())
+                    .foregroundColor(isProfit ? Theme.profitGreen : Theme.lossRed)
+            }
+            .frame(maxWidth: .infinity)
+
+            // Divider
+            Rectangle()
+                .fill(Theme.cardBorder)
+                .frame(width: 1, height: 50)
+
+            // Right: avg cost basis
+            VStack(spacing: 4) {
+                Text("Avg Cost")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+                Text(Formatters.formatUSDCompact(avgCost))
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .foregroundColor(Theme.textPrimary)
+                Text("per BTC")
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.vertical, 14)
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Theme.cardBorder, lineWidth: 1)
+        )
+        .padding(.horizontal, 16)
+    }
+
     // MARK: - Purchase List
 
     private var purchaseList: some View {
         ScrollView {
             VStack(spacing: 12) {
+                // Portfolio summary
+                portfolioSummaryCard
+
                 // Search bar
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
