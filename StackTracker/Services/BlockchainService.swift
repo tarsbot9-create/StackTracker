@@ -97,7 +97,9 @@ final class BlockchainService: ObservableObject {
     // MARK: - Fetch Address Info
 
     func fetchAddressInfo(_ address: String) async throws -> MempoolAddressInfo {
-        let url = URL(string: "\(baseURL)/address/\(address)")!
+        guard let url = URL(string: "\(baseURL)/address/\(address)") else {
+            throw BlockchainError.invalidAddress
+        }
         let (data, response) = try await session.data(from: url)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
@@ -110,7 +112,9 @@ final class BlockchainService: ObservableObject {
     // MARK: - Fetch Transactions
 
     func fetchTransactions(_ address: String) async throws -> [MempoolTx] {
-        let url = URL(string: "\(baseURL)/address/\(address)/txs")!
+        guard let url = URL(string: "\(baseURL)/address/\(address)/txs") else {
+            throw BlockchainError.fetchFailed
+        }
         let (data, response) = try await session.data(from: url)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
@@ -164,7 +168,7 @@ final class BlockchainService: ObservableObject {
         addressTxs: [AddressTransaction],
         purchases: [ExchangeWithdrawalCandidate]
     ) -> [AddressTransaction] {
-        var matched = addressTxs
+        let matched = addressTxs
         var usedPurchaseIDs: Set<UUID> = []
 
         for i in matched.indices {

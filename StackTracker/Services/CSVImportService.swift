@@ -102,7 +102,6 @@ final class CSVImportService {
 
         // Try multiple encodings and coordinate file access
         var content: String?
-        var readError: Error?
 
         let coordinator = NSFileCoordinator()
         var coordError: NSError?
@@ -122,48 +121,8 @@ final class CSVImportService {
         guard let content = content, !content.isEmpty else {
             throw ImportError.emptyFile
         }
-        let rows = parseRows(content)
 
-        guard rows.count > 1 else {
-            throw ImportError.emptyFile
-        }
-
-        let headers = rows[0].map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
-        let platform = detectPlatform(headers: headers)
-        let dataRows = Array(rows.dropFirst())
-
-        var purchases: [ParsedPurchase] = []
-        var skipped = 0
-        var errors: [String] = []
-
-        // Build existing duplicate keys
-        let existingKeys = Set(existingPurchases.map { $0.duplicateKey })
-
-        for (index, row) in dataRows.enumerated() {
-            do {
-                if let purchase = try parseRow(row, headers: headers, platform: platform, rowIndex: index + 2) {
-                    var p = purchase
-                    if existingKeys.contains(p.duplicateKey) {
-                        p.isDuplicate = true
-                        p.isSelected = false
-                    }
-                    purchases.append(p)
-                }
-            } catch ImportError.skippedRow(let reason) {
-                skipped += 1
-                errors.append("Row \(index + 2): \(reason)")
-            } catch {
-                skipped += 1
-                errors.append("Row \(index + 2): \(error.localizedDescription)")
-            }
-        }
-
-        return CSVImportResult(
-            platform: platform,
-            purchases: purchases,
-            skippedRows: skipped,
-            errors: errors
-        )
+        return try parseCSVContent(content, existingPurchases: existingPurchases)
     }
 
     // MARK: - Platform Detection
