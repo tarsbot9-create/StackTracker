@@ -188,11 +188,13 @@ struct PortfolioView: View {
     private var portfolioSummaryCard: some View {
         let buys = purchases.filter { $0.transactionType == .buy }
         let totalInvested = buys.reduce(0.0) { $0 + $1.usdSpent }
-        let totalBTC = buys.reduce(0.0) { $0 + $1.btcAmount } - purchases.filter { $0.transactionType == .sell }.reduce(0.0) { $0 + $1.btcAmount }
+        let boughtBTC = buys.reduce(0.0) { $0 + $1.btcAmount }
+        let soldBTC = purchases.filter { $0.transactionType == .sell }.reduce(0.0) { $0 + $1.btcAmount }
+        let totalBTC = boughtBTC - soldBTC
         let currentValue = totalBTC * priceService.currentPrice
         let totalPL = currentValue - totalInvested
         let plPercent = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0
-        let avgCost = totalBTC > 0 ? totalInvested / totalBTC : 0
+        let avgCost = boughtBTC > 0 ? totalInvested / boughtBTC : 0
         let isProfit = totalPL >= 0
 
         return HStack(spacing: 0) {
