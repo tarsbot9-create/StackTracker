@@ -31,6 +31,9 @@ final class PriceService: ObservableObject {
 
     private let session: URLSession
     private var lastFetch: Date?
+    private var lastChartFetch: Date?
+    private var lastChartDays: Int?
+    private var historicalCache: [String: (price: Double, fetched: Date)] = [:]
 
     init() {
         let config = URLSessionConfiguration.default
@@ -61,6 +64,12 @@ final class PriceService: ObservableObject {
     }
 
     func fetchChartData(days: Int = 30) async {
+        // Cache: don't re-fetch same chart within 60 seconds
+        if let last = lastChartFetch, lastChartDays == days,
+           Date().timeIntervalSince(last) < 60, !chartData.isEmpty {
+            return
+        }
+
         let urlString = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=\(days)"
         guard let url = URL(string: urlString) else { return }
 
@@ -78,6 +87,8 @@ final class PriceService: ObservableObject {
                 )
                 return point.date >= cutoff ? point : nil
             }
+            self.lastChartFetch = Date()
+            self.lastChartDays = days
             self.lastError = nil
         } catch {
             self.lastError = "Chart data unavailable"
@@ -88,6 +99,13 @@ final class PriceService: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd-MM-yyyy"
         let dateStr = formatter.string(from: date)
+
+        // Cache: historical prices don't change, cache for 10 minutes
+        if let cached = historicalCache[dateStr],
+           Date().timeIntervalSince(cached.fetched) < 600 {
+            return cached.price
+        }
+
         let urlString = "https://api.coingecko.com/api/v3/coins/bitcoin/history?date=\(dateStr)"
         guard let url = URL(string: urlString) else { return nil }
 
@@ -97,6 +115,7 @@ final class PriceService: ObservableObject {
                let market = json["market_data"] as? [String: Any],
                let prices = market["current_price"] as? [String: Any],
                let usd = prices["usd"] as? Double {
+                historicalCache[dateStr] = (price: usd, fetched: Date())
                 return usd
             }
         } catch {}
