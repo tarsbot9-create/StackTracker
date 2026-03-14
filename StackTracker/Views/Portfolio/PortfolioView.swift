@@ -18,13 +18,13 @@ struct PortfolioView: View {
         case amountAsc = "Smallest"
         case plDesc = "Top Performers"
         case plAsc = "Worst Performers"
+        case flagged = "Flagged"
     }
 
     enum TypeFilter: String, CaseIterable {
         case all = "All"
         case buys = "Buys"
         case sells = "Sells"
-        case flagged = "Flagged"
     }
 
     private var filteredPurchases: [Purchase] {
@@ -39,8 +39,11 @@ struct PortfolioView: View {
             result = purchases.filter { $0.transactionType == .buy }
         case .sells:
             result = purchases.filter { $0.transactionType == .sell }
-        case .flagged:
-            result = purchases.filter { $0.isFlagged && ($0.transactionType == .buy || $0.transactionType == .sell) }
+        }
+
+        // Flagged filter (from sort chip)
+        if sortBy == .flagged {
+            result = result.filter { $0.isFlagged }
         }
 
         // Search
@@ -50,25 +53,19 @@ struct PortfolioView: View {
             dateFormatter.dateStyle = .medium
 
             result = result.filter { purchase in
-                // Wallet name
                 if purchase.walletName.lowercased().contains(query) { return true }
-                // Notes
                 if purchase.notes.lowercased().contains(query) { return true }
-                // Date string
                 if dateFormatter.string(from: purchase.date).lowercased().contains(query) { return true }
-                // BTC amount
                 if String(format: "%.8f", purchase.btcAmount).contains(query) { return true }
-                // USD amount
                 if String(format: "%.2f", purchase.usdSpent).contains(query) { return true }
-                // Price
                 if String(format: "%.0f", purchase.pricePerBTC).contains(query) { return true }
                 return false
             }
         }
 
-        // Sort
+        // Sort (flagged keeps default date descending)
         switch sortBy {
-        case .dateDesc: result.sort { $0.date > $1.date }
+        case .dateDesc, .flagged: result.sort { $0.date > $1.date }
         case .dateAsc: result.sort { $0.date < $1.date }
         case .amountDesc: result.sort { $0.btcAmount > $1.btcAmount }
         case .amountAsc: result.sort { $0.btcAmount < $1.btcAmount }
@@ -94,7 +91,7 @@ struct PortfolioView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 12) {
-                        sortMenu
+                        typeFilterMenu
 
                         Button {
                             showAddPurchase = true
@@ -118,25 +115,31 @@ struct PortfolioView: View {
         }
     }
 
-    // MARK: - Sort Menu
+    // MARK: - Type Filter Menu
 
-    private var sortMenu: some View {
+    private var typeFilterMenu: some View {
         Menu {
-            ForEach(SortOption.allCases, id: \.self) { option in
+            ForEach(TypeFilter.allCases, id: \.self) { filter in
                 Button {
-                    withAnimation { sortBy = option }
+                    withAnimation { typeFilter = filter }
                 } label: {
                     HStack {
-                        Text(option.rawValue)
-                        if sortBy == option {
+                        Text(filter.rawValue)
+                        if typeFilter == filter {
                             Image(systemName: "checkmark")
                         }
                     }
                 }
             }
         } label: {
-            Image(systemName: "arrow.up.arrow.down.circle")
-                .foregroundColor(Theme.bitcoinOrange)
+            HStack(spacing: 4) {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                if typeFilter != .all {
+                    Text(typeFilter.rawValue)
+                        .font(.caption.bold())
+                }
+            }
+            .foregroundColor(typeFilter == .all ? Theme.bitcoinOrange : Theme.bitcoinOrange)
         }
     }
 
@@ -211,11 +214,11 @@ struct PortfolioView: View {
                 )
                 .padding(.horizontal, 16)
 
-                // Type filter chips
+                // Sort chips
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(TypeFilter.allCases, id: \.self) { filter in
-                            filterChip(filter)
+                        ForEach(SortOption.allCases, id: \.self) { option in
+                            sortChip(option)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -227,22 +230,24 @@ struct PortfolioView: View {
                         .font(.caption)
                         .foregroundColor(Theme.textSecondary)
                     Spacer()
-                    Text(sortBy.rawValue)
-                        .font(.caption)
-                        .foregroundColor(Theme.textSecondary)
+                    if typeFilter != .all {
+                        Text(typeFilter.rawValue)
+                            .font(.caption)
+                            .foregroundColor(Theme.bitcoinOrange)
+                    }
                 }
                 .padding(.horizontal, 20)
 
                 // Purchase cards
                 if filteredPurchases.isEmpty {
                     VStack(spacing: 12) {
-                        Image(systemName: typeFilter == .flagged ? "flag" : "magnifyingglass")
+                        Image(systemName: sortBy == .flagged ? "flag" : "magnifyingglass")
                             .font(.system(size: 30))
                             .foregroundColor(Theme.textSecondary.opacity(0.5))
-                        Text(typeFilter == .flagged ? "No flagged transactions" : "No results found")
+                        Text(sortBy == .flagged ? "No flagged transactions" : "No results found")
                             .font(.subheadline)
                             .foregroundColor(Theme.textSecondary)
-                        if typeFilter == .flagged {
+                        if sortBy == .flagged {
                             Text("Swipe right on a transaction to flag it.")
                                 .font(.caption)
                                 .foregroundColor(Theme.textSecondary.opacity(0.7))
@@ -300,35 +305,22 @@ struct PortfolioView: View {
         }
     }
 
-    // MARK: - Filter Chip
+    // MARK: - Sort Chip
 
-    private func filterChip(_ filter: TypeFilter) -> some View {
-        let isSelected = typeFilter == filter
-        let count: Int = {
-            switch filter {
-            case .all: return purchases.filter { $0.transactionType == .buy || $0.transactionType == .sell }.count
-            case .buys: return purchases.filter { $0.transactionType == .buy }.count
-            case .sells: return purchases.filter { $0.transactionType == .sell }.count
-            case .flagged: return purchases.filter { $0.isFlagged && ($0.transactionType == .buy || $0.transactionType == .sell) }.count
-            }
-        }()
+    private func sortChip(_ option: SortOption) -> some View {
+        let isSelected = sortBy == option
 
         return Button {
             Haptics.select()
-            withAnimation(.easeInOut(duration: 0.2)) { typeFilter = filter }
+            withAnimation(.easeInOut(duration: 0.2)) { sortBy = option }
         } label: {
             HStack(spacing: 4) {
-                if filter == .flagged {
+                if option == .flagged {
                     Image(systemName: "flag.fill")
                         .font(.caption2)
                 }
-                Text(filter.rawValue)
+                Text(option.rawValue)
                     .font(.subheadline.weight(.medium))
-                if count > 0 && filter != .all {
-                    Text("\(count)")
-                        .font(.caption2.bold())
-                        .foregroundColor(isSelected ? .black.opacity(0.6) : Theme.textSecondary)
-                }
             }
             .foregroundColor(isSelected ? .black : Theme.textSecondary)
             .padding(.horizontal, 14)
