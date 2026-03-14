@@ -498,10 +498,10 @@ struct PurchaseCard: View {
                         .font(.caption2)
                         .foregroundColor(Theme.textSecondary)
                     Text(Formatters.formatBTC(purchase.btcAmount) + " BTC")
-                        .font(.system(.subheadline, design: .monospaced, weight: .bold))
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
                         .foregroundColor(Theme.textPrimary)
                     Text(Formatters.formatSats(purchase.btcAmount) + " sats")
-                        .font(.system(.caption2, design: .monospaced))
+                        .font(.system(.caption2, design: .rounded))
                         .foregroundColor(Theme.textSecondary)
                 }
 
