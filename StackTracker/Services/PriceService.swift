@@ -70,11 +70,13 @@ final class PriceService: ObservableObject {
         do {
             let (data, _) = try await session.data(from: url)
             let response = try JSONDecoder().decode(MarketChartResponse.self, from: data)
-            self.chartData = response.prices.map { pair in
-                PricePoint(
+            let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+            self.chartData = response.prices.compactMap { pair in
+                let point = PricePoint(
                     date: Date(timeIntervalSince1970: pair[0] / 1000),
                     price: pair[1]
                 )
+                return point.date >= cutoff ? point : nil
             }
             self.lastError = nil
         } catch {
