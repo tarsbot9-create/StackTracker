@@ -13,7 +13,6 @@ struct DashboardView: View {
 
     @State private var showNetworkError = false
     @State private var showDCACalculator = false
-    @State private var show7dChange = false
 
     var body: some View {
         NavigationStack {
@@ -82,11 +81,6 @@ struct DashboardView: View {
                                 .foregroundColor(summary.isProfit ? Theme.profitGreen : Theme.lossRed)
                                 .padding(.top, 2)
 
-                                // Cost basis change indicator
-                                if priceService.currentPrice > 0 && summary.averageCostBasis > 0 {
-                                    costBasisChangeView
-                                }
-
                                 // Exchange vs Cold Storage breakdown
                                 if summary.coldStorageBTC > 0 {
                                     Divider().background(Theme.cardBorder).padding(.vertical, 4)
@@ -135,11 +129,9 @@ struct DashboardView: View {
                             GridItem(.flexible(), spacing: 12),
                             GridItem(.flexible(), spacing: 12)
                         ], spacing: 12) {
-                            StatCard(
-                                title: "Avg Cost Basis",
-                                value: Formatters.formatUSDCompact(summary.averageCostBasis),
-                                icon: "target"
-                            )
+                            // Avg Cost Basis with 7d change
+                            avgCostBasisCard
+
                             StatCard(
                                 title: "Total Invested",
                                 value: Formatters.formatUSD(summary.totalInvested),
@@ -349,47 +341,51 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Cost Basis Change
+    // MARK: - Avg Cost Basis Card with 7d Change
 
-    private var costBasisChangeView: some View {
-        let change24h = priceService.change24h / 100.0 // convert from percent
-        let valueChange24h = summary.currentValue * change24h / (1 + change24h)
-
-        // For 7d, estimate from chart data
+    private var avgCostBasisCard: some View {
         let change7d: Double = {
             guard let firstPoint = priceService.chartData.first(where: {
                 $0.date >= Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
             }), firstPoint.price > 0 else { return 0 }
             return (priceService.currentPrice - firstPoint.price) / firstPoint.price
         }()
-        let valueChange7d = summary.currentValue * change7d / (1 + change7d)
+        let isUp = change7d >= 0
 
-        let activeChange = show7dChange ? change7d : change24h
-        let activeValueChange = show7dChange ? valueChange7d : valueChange24h
-        let isUp = activeChange >= 0
-
-        return Button {
-            Haptics.select()
-            withAnimation(.easeInOut(duration: 0.2)) { show7dChange.toggle() }
-        } label: {
-            HStack(spacing: 6) {
-                Text(show7dChange ? "7d" : "24h")
-                    .font(.caption2.bold())
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                Image(systemName: "target")
+                    .font(.caption)
                     .foregroundColor(Theme.textSecondary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Theme.darkBackground)
-                    .cornerRadius(4)
-
-                Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
-                    .font(.caption2)
-                Text("\(Formatters.formatUSD(abs(activeValueChange))) (\(Formatters.formatPercent(activeChange * 100)))")
-                    .font(.caption.bold())
+                Text("Avg Cost Basis")
+                    .font(.caption)
+                    .foregroundColor(Theme.textSecondary)
             }
-            .foregroundColor(isUp ? Theme.profitGreen.opacity(0.8) : Theme.lossRed.opacity(0.8))
-            .padding(.top, 2)
+
+            Text(Formatters.formatUSDCompact(summary.averageCostBasis))
+                .font(.system(.title3, design: .rounded, weight: .semibold))
+                .foregroundColor(Theme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+
+            if priceService.currentPrice > 0 && summary.averageCostBasis > 0 {
+                HStack(spacing: 4) {
+                    Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
+                        .font(.caption2)
+                    Text("\(Formatters.formatPercent(change7d * 100)) 7d")
+                        .font(.caption2.bold())
+                }
+                .foregroundColor(isUp ? Theme.profitGreen : Theme.lossRed)
+            }
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Theme.cardBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Theme.cardBorder, lineWidth: 1)
+        )
     }
 
     private func fetchPriceData() async {
