@@ -108,9 +108,6 @@ struct AppRootView: View {
                 OnboardingView()
             }
         }
-        .onTapGesture {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        }
         .onChange(of: appearanceMode, initial: true) { _, _ in
             applyAppearance()
         }

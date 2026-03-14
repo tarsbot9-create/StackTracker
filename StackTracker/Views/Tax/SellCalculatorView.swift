@@ -54,10 +54,21 @@ struct SellCalculatorView: View {
                 }
                 .padding(16)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(Theme.darkBackground)
             .navigationTitle("Sell Calculator")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .keyboard) {
+                    HStack {
+                        Spacer()
+                        Button("Done") {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }
+                        .foregroundColor(Theme.bitcoinOrange)
+                        .font(.body.bold())
+                    }
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Close") { dismiss() }
                         .foregroundColor(Theme.bitcoinOrange)
