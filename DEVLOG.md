@@ -419,3 +419,45 @@
 ### Build Status
 - **BUILD SUCCEEDED** — 3 commits pushed to main
 - Commits: price alerts + milestones + review prompt, DCA calculator, sats-per-dollar
+
+---
+
+## Session Log: March 13, 2026 (Evening - with Joey)
+
+Joey tested the app and provided UI/UX feedback. 10 commits, 2 TestFlight builds shipped.
+
+### Website
+1. **Landing page redesign** - stacktracker-site updated with feature grid (6 features), privacy banner, Free vs Pro pricing cards, proper footer. Was just a tagline + 2 links.
+
+### UI/UX Fixes
+2. **CSV import success screen** - Replaced cramped card with full-screen animated view: spring-animated checkmark with expanding orange rings, stats pills (buys/sells/transfers), full-width Done button
+3. **Keyboard dismiss** - Added `scrollDismissesKeyboard(.interactively)` + orange "Done" toolbar button on Sell Calculator and Add Purchase. Removed broken root-level `onTapGesture` (was conflicting with buttons/toggles).
+4. **30-day chart fix** - CoinGecko free tier sometimes returns 10+ months of data. Now filters response to only keep data points within the requested window.
+5. **CoinGecko caching** - Chart data cached 60s, historical prices cached 10min. Reduces rate limit errors significantly.
+6. **Avg cost basis fix** - Portfolio summary card was dividing totalInvested by remaining stack (buys-sells). Fixed to divide by total BTC bought (matches Dashboard calculation).
+7. **Rounded fonts** - Portfolio card BTC/sats fonts changed from `.monospaced` to `.rounded` to match Dashboard style.
+
+### New Features
+8. **App icon** - Joey iterated with ChatGPT/Gemini. Final: white background, orange stacked bars + ₿ symbol. Source was 800x800, upscaled to 1024x1024. Created transparent orange-only version for Settings logo that works on dark/light mode.
+9. **Portfolio layout swap** - Sort options (Newest, Oldest, Largest, Smallest, Top Performers, Worst Performers, Flagged) now primary scrollable chips. Type filter (All/Buys/Sells) moved to toolbar menu with filter icon.
+10. **Portfolio summary card** - Three-column card at top of Portfolio: Invested | Total P/L ($ and %) | Avg Cost per BTC
+11. **Dashboard cost basis change** - 7d percent change shown inside Avg Cost Basis stat card (derived from chart data)
+12. **Paywall update** - "Cost Basis Tracking" added as first Pro feature: "Know your exact cost basis across every purchase"
+13. **Dynamic milestones** - Named milestones under 1 BTC (100K sats through 1 BTC). Dynamic milestones above: 0.5 BTC steps from 1-10 BTC, 1 BTC steps from 10-21 BTC. 21 BTC = "One in a Million" (1/1,000,000 of total supply). MilestoneEngine shared between Dashboard and MilestonesView. Remaining shows BTC instead of sats when large.
+
+### TestFlight Builds
+- **Build 5 (1.0)** - website, import success, keyboard v1, chart fix, caching, icon, sort chips, summary card, cost basis change, paywall
+- **Build 6 (1.0)** - dynamic milestones, cost basis fix, rounded fonts, keyboard dismiss v2
+
+### Key Decisions
+- Apple subscription management screen is native iOS - we don't control it
+- $2.99 showing in Apple subscriptions is not from StackTracker (products not created yet)
+- CoinGecko rate limit is per IP address, not per app
+- **Joey feedback: don't build features autonomously** - run ideas by him first, let him approve before implementation
+
+### Remaining Before Launch
+1. RevenueCat real API key + subscription products in App Store Connect
+2. App Store screenshots (6.7" + 6.1" sets)
+3. Remove TestFlight Pro bypass
+4. App Privacy labels
+5. Add Joey's friend as External Tester (waiting on Apple ID email)
