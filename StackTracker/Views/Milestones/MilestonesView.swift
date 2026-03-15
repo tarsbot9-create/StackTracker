@@ -25,7 +25,6 @@ struct MilestoneEngine {
     /// Generate dynamic milestones beyond 1 BTC up to 21 BTC
     static func dynamicMilestones(currentSats: Int) -> [Milestone] {
         var results: [Milestone] = []
-        let currentBTC = Double(currentSats) / 100_000_000.0
 
         // Generate milestones from 1.5 BTC up to 21 BTC
         var btc = 1.5
@@ -74,6 +73,40 @@ struct MilestoneEngine {
         }
 
         return all
+    }
+
+    /// The ultimate milestone: 21 BTC = one-millionth of total supply
+    static let ultimateMilestoneSats = 2_100_000_000 // 21 BTC
+
+    /// Returns the next milestone for the given stack, or nil if all milestones are complete
+    static func nextMilestone(totalBTC: Double, totalSats: Int) -> (targetSats: Int, name: String, subtitle: String?)? {
+        // Check named milestones first (under 1 BTC)
+        if let named = namedMilestones.first(where: { $0.targetSats > totalSats }) {
+            return (named.targetSats, named.name, nil)
+        }
+
+        // Already past 21 BTC
+        if totalSats >= ultimateMilestoneSats {
+            return nil
+        }
+
+        // Dynamic milestones based on stack size
+        let increment: Double = totalBTC < 10 ? 0.5 : 1.0
+        let nextBTC = (totalBTC / increment).rounded(.up) * increment
+        let targetBTC = min(nextBTC <= totalBTC ? nextBTC + increment : nextBTC, 21.0)
+        let targetSats = Int(targetBTC * 100_000_000)
+
+        let name: String
+        if targetBTC == 21.0 {
+            name = "21 BTC"
+        } else if targetBTC == targetBTC.rounded() {
+            name = "\(Int(targetBTC)) BTC"
+        } else {
+            name = String(format: "%.1f BTC", targetBTC)
+        }
+
+        let subtitle = targetSats == ultimateMilestoneSats ? "One in a Million" : nil
+        return (targetSats, name, subtitle)
     }
 }
 

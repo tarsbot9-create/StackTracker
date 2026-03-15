@@ -50,5 +50,7 @@ struct PriceTickerView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Theme.cardBorder, lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Bitcoin price \(Formatters.formatUSDCompact(price)), \(isPositive ? "up" : "down") \(Formatters.formatPercent(change24h)) in 24 hours")
     }
 }

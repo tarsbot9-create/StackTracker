@@ -61,15 +61,18 @@ struct DashboardView: View {
                                 Text(Formatters.formatBTC(summary.totalBTC) + " BTC")
                                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
                                     .foregroundColor(Theme.bitcoinOrange)
+                                    .accessibilityLabel("Total stack: \(Formatters.formatBTC(summary.totalBTC)) Bitcoin")
 
                                 Text(Formatters.formatSats(summary.totalBTC) + " sats")
                                     .font(.subheadline)
                                     .foregroundColor(Theme.textSecondary)
+                                    .accessibilityHidden(true)
 
                                 Text(Formatters.formatUSD(summary.currentValue))
                                     .font(.system(.title2, design: .rounded, weight: .semibold))
                                     .foregroundColor(Theme.textPrimary)
                                     .padding(.top, 4)
+                                    .accessibilityLabel("Current value: \(Formatters.formatUSD(summary.currentValue))")
 
                                 HStack(spacing: 4) {
                                     Image(systemName: summary.isProfit ? "arrow.up.right" : "arrow.down.right")
@@ -243,76 +246,16 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Next Milestone Card
-
-    /// Named milestones for early stackers (under 1 BTC)
-    private static let namedMilestones: [(sats: Int, name: String)] = [
-        (100_000, "100K Sats"),
-        (500_000, "500K Sats"),
-        (1_000_000, "1M Sats"),
-        (5_000_000, "5M Sats"),
-        (10_000_000, "0.1 BTC"),
-        (25_000_000, "0.25 BTC"),
-        (50_000_000, "0.5 BTC"),
-        (100_000_000, "1 BTC"),
-    ]
-
-    /// The ultimate milestone: 21 BTC = one-millionth of total supply
-    private static let ultimateMilestoneSats = 2_100_000_000 // 21 BTC
-
-    /// Compute the next milestone dynamically based on current stack
-    private func nextMilestone(totalBTC: Double, totalSats: Int) -> (targetSats: Int, name: String)? {
-        // Check named milestones first (under 1 BTC)
-        if let named = Self.namedMilestones.first(where: { $0.sats > totalSats }) {
-            return (named.sats, named.name)
-        }
-
-        // Already past 21 BTC - no more milestones
-        if totalSats >= Self.ultimateMilestoneSats {
-            return nil
-        }
-
-        // Dynamic milestones based on stack size (BTC)
-        // Find the next "nice number" above current stack
-        let increment: Double
-        if totalBTC < 10 {
-            increment = 0.5   // 1 BTC - 10 BTC: steps of 0.5
-        } else {
-            increment = 1.0   // 10 BTC - 21 BTC: steps of 1.0
-        }
-
-        let nextBTC = (totalBTC / increment).rounded(.up) * increment
-        // Make sure we actually moved forward
-        let targetBTC = nextBTC <= totalBTC ? nextBTC + increment : nextBTC
-
-        // Cap at 21 BTC
-        let cappedBTC = min(targetBTC, 21.0)
-        let targetSats = Int(cappedBTC * 100_000_000)
-
-        // Format the name
-        let name: String
-        if cappedBTC == 21.0 {
-            name = "21 BTC"
-        } else if cappedBTC == cappedBTC.rounded() {
-            name = "\(Int(cappedBTC)) BTC"
-        } else {
-            name = String(format: "%.1f BTC", cappedBTC)
-        }
-
-        return (targetSats, name)
-    }
+    // MARK: - Next Milestone Card (uses shared MilestoneEngine)
 
     @ViewBuilder
     private var nextMilestoneCard: some View {
         let totalSats = summary.totalSats
         let totalBTC = summary.totalBTC
 
-        if let milestone = nextMilestone(totalBTC: totalBTC, totalSats: totalSats) {
+        if let milestone = MilestoneEngine.nextMilestone(totalBTC: totalBTC, totalSats: totalSats) {
             let progress = Double(totalSats) / Double(milestone.targetSats)
             let remaining = milestone.targetSats - totalSats
-
-            let isUltimate = milestone.targetSats == Self.ultimateMilestoneSats
-            let subtitle = isUltimate ? "One in a Million" : nil
 
             NavigationLink(destination: MilestonesView()) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -324,7 +267,7 @@ struct DashboardView: View {
                             Text("Next Milestone: \(milestone.name)")
                                 .font(.caption.bold())
                                 .foregroundColor(Theme.textPrimary)
-                            if let subtitle {
+                            if let subtitle = milestone.subtitle {
                                 Text(subtitle)
                                     .font(.caption2)
                                     .foregroundColor(Theme.bitcoinOrange.opacity(0.7))
@@ -369,7 +312,7 @@ struct DashboardView: View {
                 )
             }
             .buttonStyle(.plain)
-        } else if totalSats >= Self.ultimateMilestoneSats {
+        } else if totalSats >= MilestoneEngine.ultimateMilestoneSats {
             // 21+ BTC - ultimate achievement
             NavigationLink(destination: MilestonesView()) {
                 HStack {
