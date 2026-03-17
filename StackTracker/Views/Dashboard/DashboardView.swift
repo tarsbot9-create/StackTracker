@@ -132,13 +132,14 @@ struct DashboardView: View {
                             GridItem(.flexible(), spacing: 12),
                             GridItem(.flexible(), spacing: 12)
                         ], spacing: 12) {
-                            // Avg Cost Basis with 7d change
-                            avgCostBasisCard
-
+                            StatCard(
+                                title: "Avg Cost Basis",
+                                value: Formatters.formatUSDCompact(summary.averageCostBasis),
+                                icon: "target"
+                            )
                             StatCard(
                                 title: "Total Invested",
                                 value: Formatters.formatUSD(summary.totalInvested),
-                                subtitle: "\(summary.purchaseCount) purchases",
                                 icon: "dollarsign.circle"
                             )
                         }
@@ -345,52 +346,6 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Avg Cost Basis Card with 7d Change
-
-    private var avgCostBasisCard: some View {
-        let change7d: Double = {
-            guard let firstPoint = priceService.chartData.first(where: {
-                $0.date >= Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-            }), firstPoint.price > 0 else { return 0 }
-            return (priceService.currentPrice - firstPoint.price) / firstPoint.price
-        }()
-        let isUp = change7d >= 0
-
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Image(systemName: "target")
-                    .font(.caption)
-                    .foregroundColor(Theme.textSecondary)
-                Text("Avg Cost Basis")
-                    .font(.caption)
-                    .foregroundColor(Theme.textSecondary)
-            }
-
-            Text(Formatters.formatUSDCompact(summary.averageCostBasis))
-                .font(.system(.title3, design: .rounded, weight: .semibold))
-                .foregroundColor(Theme.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-
-            if priceService.currentPrice > 0 && summary.averageCostBasis > 0 {
-                HStack(spacing: 4) {
-                    Image(systemName: isUp ? "arrow.up.right" : "arrow.down.right")
-                        .font(.caption2)
-                    Text("\(Formatters.formatPercent(change7d * 100)) 7d")
-                        .font(.caption2.bold())
-                }
-                .foregroundColor(isUp ? Theme.profitGreen : Theme.lossRed)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Theme.cardBackground)
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Theme.cardBorder, lineWidth: 1)
-        )
-    }
 
     private func fetchPriceData() async {
         let priceBefore = priceService.currentPrice
