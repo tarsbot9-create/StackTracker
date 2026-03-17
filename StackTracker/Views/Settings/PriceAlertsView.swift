@@ -73,22 +73,49 @@ struct PriceAlertsView: View {
             // Notification permission
             if !notificationService.isAuthorized {
                 Section {
-                    Button {
-                        Task {
-                            await notificationService.requestAuthorization()
+                    if notificationService.isDenied {
+                        // Permission was denied - must open Settings
+                        Button {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "bell.slash")
+                                    .foregroundColor(.orange)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Notifications Disabled")
+                                        .foregroundColor(Theme.textPrimary)
+                                    Text("Tap to open Settings and enable")
+                                        .font(.caption)
+                                        .foregroundColor(Theme.textSecondary)
+                                }
+                                Spacer()
+                                Image(systemName: "arrow.up.forward.app")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
                         }
-                    } label: {
-                        HStack {
-                            Image(systemName: "bell.badge")
-                                .foregroundColor(Theme.bitcoinOrange)
-                            Text("Enable Notifications")
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundColor(Theme.textSecondary)
+                        .listRowBackground(Theme.cardBackground)
+                    } else {
+                        // Not yet asked
+                        Button {
+                            Task {
+                                await notificationService.requestAuthorization()
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "bell.badge")
+                                    .foregroundColor(Theme.bitcoinOrange)
+                                Text("Enable Notifications")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
                         }
+                        .listRowBackground(Theme.cardBackground)
                     }
-                    .listRowBackground(Theme.cardBackground)
                 }
             }
         }
@@ -126,6 +153,11 @@ struct PriceAlertsView: View {
         }
         .task {
             await notificationService.checkAuthorizationStatus()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            Task {
+                await notificationService.checkAuthorizationStatus()
+            }
         }
     }
 

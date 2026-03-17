@@ -7,6 +7,7 @@ final class NotificationService: ObservableObject {
     static let shared = NotificationService()
 
     @Published var isAuthorized = false
+    @Published var isDenied = false
     @Published var priceAlerts: [PriceAlert] = []
 
     private let alertsKey = "priceAlerts"
@@ -49,6 +50,7 @@ final class NotificationService: ObservableObject {
     func checkAuthorizationStatus() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         self.isAuthorized = settings.authorizationStatus == .authorized
+        self.isDenied = settings.authorizationStatus == .denied
     }
 
     // MARK: - Price Alerts
