@@ -461,3 +461,50 @@ Joey tested the app and provided UI/UX feedback. 10 commits, 2 TestFlight builds
 3. Remove TestFlight Pro bypass
 4. App Privacy labels
 5. Add Joey's friend as External Tester (waiting on Apple ID email)
+
+---
+
+## Session Log: March 15, 2026 (Overnight)
+
+### Code Quality
+1. **MilestoneEngine refactor** - Eliminated ~65 lines of duplicate code in DashboardView. Dashboard now uses shared `MilestoneEngine.nextMilestone()` static method and `ultimateMilestoneSats` constant.
+2. **Accessibility labels** - Added to Dashboard total stack, current value, and PriceTickerView (combined element with price + 24h change).
+3. **Unused variable warning** - Fixed in `MilestoneEngine.dynamicMilestones()`.
+4. **TASKS.md update** - Was stale since March 5, still referenced Kalshi. Updated to reflect current StackTracker status.
+5. Clean build, zero warnings. 1 commit pushed.
+
+---
+
+## Session Log: March 16, 2026 (Evening - with Joey)
+
+### UI Adjustments
+1. **Stat card sizing** - Added "X purchases" subtitle to Total Invested card, then reverted both cards to clean matching design after removing 7d change.
+2. **Removed 7d cost basis change** - Joey felt it was noisy/not informative. Deleted custom avgCostBasisCard, reverted to standard StatCard.
+
+### Bug Fixes
+3. **Notification denied state** - When user denies notification permission, "Enable Notifications" button now detects the denied state and opens iOS Settings directly. Auto-refreshes status when app returns to foreground.
+
+### New: CSV Column Mapper
+4. **Column mapping fallback UI** - When CSV auto-detect fails, shows "Map Your Columns" sheet with CSV preview + dropdown pickers for Date, BTC Amount, Price, USD Spent, and Transaction Type. Supports any exchange format now.
+5. **CSV import list updated** - Shows "Auto-detected" next to Coinbase/Cash App/Strike/Swan/River, plus "Any Other CSV" with "Manual column mapping" option.
+
+### CSV Format Verification Research
+- Only Coinbase and Cash App CSV formats are verified against real exports
+- Strike, Swan, River parsers are educated guesses based on public documentation
+- Column mapper serves as universal safety net for any exchange
+
+### Build
+- **Build 7 (1.0)** shipped to TestFlight
+
+---
+
+## Session Log: March 17, 2026 (Overnight)
+
+### Performance Optimization: DateFormatter Caching
+1. **CSVImportService date parsing** - Previously created 12 DateFormatters + 2 ISO8601DateFormatters on every `parseDate()` call. These are expensive objects in Foundation. Refactored to use static cached formatters that are created once and reused across all CSV parsing. For a 500-row CSV, this eliminates ~7,000 unnecessary object allocations.
+2. **Duplicate key generation** - `ParsedPurchase.duplicateKey` and `DuplicateInfo.init` each created a new ISO8601DateFormatter per call. Replaced with shared static formatters. For a 100-row CSV with 100 existing purchases, this eliminates ~200 unnecessary allocations.
+3. **Compiler warning fix** - Removed unused `headers` variable in `parseWithMapping()` method (column indices are used directly, headers not needed).
+
+### Build Status
+- **BUILD SUCCEEDED** - zero warnings, clean build
+- 1 commit pushed to main

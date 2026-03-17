@@ -26,9 +26,16 @@ struct ParsedPurchase: Identifiable, Hashable {
     var isSelected: Bool = true
     var isDuplicate: Bool = false
 
+    /// Shared ISO8601 formatter for duplicate key generation (avoids creating one per row)
+    private static let iso8601: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
     // Composite key for duplicate detection
     var duplicateKey: String {
-        let dateStr = ISO8601DateFormatter().string(from: date)
+        let dateStr = Self.iso8601.string(from: date)
         return "\(dateStr)_\(String(format: "%.8f", btcAmount))_\(String(format: "%.2f", usdSpent))"
     }
 }
@@ -544,12 +551,12 @@ final class CSVImportService {
         return rows
     }
 
-    // MARK: - Date Parsing
+    // MARK: - Date Parsing (cached formatters for performance)
 
-    private static func parseDate(_ string: String) -> Date? {
-        let clean = string.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let formatters: [String] = [
+    /// Cached DateFormatters - these are expensive to create, so we reuse them.
+    /// Each formatter is created once and stored as a static property.
+    private static let cachedDateFormatters: [DateFormatter] = {
+        let formats = [
             "yyyy-MM-dd'T'HH:mm:ssZ",
             "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
             "yyyy-MM-dd'T'HH:mm:ss",
@@ -563,24 +570,38 @@ final class CSVImportService {
             "MMM d, yyyy",
             "MMMM d, yyyy",
         ]
-
-        let df = DateFormatter()
-        df.locale = Locale(identifier: "en_US_POSIX")
-
-        for format in formatters {
+        return formats.map { format in
+            let df = DateFormatter()
+            df.locale = Locale(identifier: "en_US_POSIX")
             df.dateFormat = format
-            if let date = df.date(from: clean) {
+            return df
+        }
+    }()
+
+    private static let cachedISO8601Fractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    private static let cachedISO8601Standard: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
+    private static func parseDate(_ string: String) -> Date? {
+        let clean = string.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        for formatter in cachedDateFormatters {
+            if let date = formatter.date(from: clean) {
                 return date
             }
         }
 
-        // Try ISO8601
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = iso.date(from: clean) { return date }
-
-        iso.formatOptions = [.withInternetDateTime]
-        return iso.date(from: clean)
+        // Try ISO8601 variants
+        if let date = cachedISO8601Fractional.date(from: clean) { return date }
+        return cachedISO8601Standard.date(from: clean)
     }
 
     // MARK: - Number Parsing
@@ -608,7 +629,7 @@ final class CSVImportService {
         let rows = parseRows(content)
         guard rows.count > 1 else { throw ImportError.emptyFile }
 
-        let headers = rows[0].map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
+        // Headers not needed for manual mapping (columns are specified by index)
         let dataRows = Array(rows.dropFirst())
 
         var purchases: [ParsedPurchase] = []
@@ -718,8 +739,15 @@ struct ColumnMapping {
 struct DuplicateInfo {
     let duplicateKey: String
 
+    /// Shared ISO8601 formatter (avoids creating one per existing purchase)
+    private static let iso8601: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
     init(date: Date, btcAmount: Double, usdSpent: Double) {
-        let dateStr = ISO8601DateFormatter().string(from: date)
+        let dateStr = Self.iso8601.string(from: date)
         self.duplicateKey = "\(dateStr)_\(String(format: "%.8f", btcAmount))_\(String(format: "%.2f", usdSpent))"
     }
 }
