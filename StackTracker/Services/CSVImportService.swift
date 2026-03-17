@@ -599,6 +599,118 @@ final class CSVImportService {
 
         return Double(clean) ?? 0
     }
+
+    // MARK: - Manual Column Mapping
+
+    static func parseWithMapping(_ content: String, mapping: ColumnMapping, existingPurchases: [DuplicateInfo] = []) throws -> CSVImportResult {
+        guard !content.isEmpty else { throw ImportError.emptyFile }
+
+        let rows = parseRows(content)
+        guard rows.count > 1 else { throw ImportError.emptyFile }
+
+        let headers = rows[0].map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
+        let dataRows = Array(rows.dropFirst())
+
+        var purchases: [ParsedPurchase] = []
+        var skipped = 0
+        let existingKeys = Set(existingPurchases.map { $0.duplicateKey })
+
+        for (index, row) in dataRows.enumerated() {
+            // Get date
+            guard let dateCol = mapping.dateColumn, dateCol < row.count,
+                  let date = parseDate(row[dateCol]) else {
+                skipped += 1
+                continue
+            }
+
+            // Get BTC amount
+            guard let btcCol = mapping.btcAmountColumn, btcCol < row.count else {
+                skipped += 1
+                continue
+            }
+            let btcAmount = abs(parseDouble(row[btcCol]))
+            guard btcAmount > 0 && btcAmount < 1000 else {
+                skipped += 1
+                continue
+            }
+
+            // Get price and/or USD
+            var price = 0.0
+            var usd = 0.0
+
+            if let priceCol = mapping.priceColumn, priceCol < row.count {
+                price = abs(parseDouble(row[priceCol]))
+            }
+            if let usdCol = mapping.usdSpentColumn, usdCol < row.count {
+                usd = abs(parseDouble(row[usdCol]))
+            }
+
+            // Derive missing value
+            if price == 0 && usd > 0 {
+                price = usd / btcAmount
+            } else if usd == 0 && price > 0 {
+                usd = btcAmount * price
+            }
+
+            guard price > 0 else {
+                skipped += 1
+                continue
+            }
+
+            // Determine transaction type
+            var txType: TransactionType = .buy
+            if let typeCol = mapping.typeColumn, typeCol < row.count {
+                let typeStr = row[typeCol].lowercased().trimmingCharacters(in: .whitespaces)
+                if typeStr.contains("sell") || typeStr.contains("sale") {
+                    txType = .sell
+                } else if typeStr.contains("send") || typeStr.contains("withdraw") || typeStr.contains("transfer") {
+                    txType = .withdrawal
+                } else if typeStr.contains("payment") || typeStr.contains("spend") || typeStr.contains("spent") {
+                    txType = .payment
+                }
+            }
+
+            var purchase = ParsedPurchase(
+                date: date, btcAmount: btcAmount, pricePerBTC: price,
+                usdSpent: usd, walletName: "Imported",
+                notes: "CSV Import (Row \(index + 2))",
+                transactionType: txType
+            )
+
+            if existingKeys.contains(purchase.duplicateKey) {
+                purchase.isDuplicate = true
+                purchase.isSelected = false
+            }
+
+            purchases.append(purchase)
+        }
+
+        return CSVImportResult(
+            platform: .unknown,
+            purchases: purchases,
+            skippedRows: skipped,
+            errors: []
+        )
+    }
+
+    /// Expose row parsing for the column mapper preview
+    static func extractHeadersAndPreview(_ content: String) -> (headers: [String], preview: [[String]])? {
+        let rows = parseRows(content)
+        guard rows.count > 1 else { return nil }
+        let headers = rows[0].map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
+        let preview = Array(rows.dropFirst().prefix(3).map { $0 })
+        return (headers, preview)
+    }
+}
+
+// MARK: - Column Mapping
+
+struct ColumnMapping {
+    var dateColumn: Int?
+    var btcAmountColumn: Int?
+    var priceColumn: Int?
+    var usdSpentColumn: Int?
+    var typeColumn: Int?
 }
 
 // MARK: - Duplicate Info (from existing purchases)

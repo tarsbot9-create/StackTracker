@@ -43,6 +43,10 @@ struct CSVImportView: View {
     @State private var isImporting = false
     @State private var importComplete = false
     @State private var importedCount = 0
+    @State private var showColumnMapper = false
+    @State private var rawCSVContent: String = ""
+    @State private var csvHeaders: [String] = []
+    @State private var csvPreviewRows: [[String]] = []
 
     var body: some View {
         NavigationStack {
@@ -78,6 +82,15 @@ struct CSVImportView: View {
             } message: {
                 Text(errorMessage)
             }
+            .sheet(isPresented: $showColumnMapper) {
+                ColumnMapperView(
+                    headers: csvHeaders,
+                    previewRows: csvPreviewRows
+                ) { mapping in
+                    showColumnMapper = false
+                    handleMappedImport(mapping)
+                }
+            }
         }
     }
 
@@ -102,12 +115,12 @@ struct CSVImportView: View {
                 .padding(.horizontal, 32)
 
             VStack(alignment: .leading, spacing: 12) {
-                supportedPlatformRow("Coinbase")
-                supportedPlatformRow("Cash App")
-                supportedPlatformRow("Strike")
-                supportedPlatformRow("Swan")
-                supportedPlatformRow("River")
-                supportedPlatformRow("Generic CSV")
+                supportedPlatformRow("Coinbase", detail: "Auto-detected")
+                supportedPlatformRow("Cash App", detail: "Auto-detected")
+                supportedPlatformRow("Strike", detail: "Auto-detected")
+                supportedPlatformRow("Swan", detail: "Auto-detected")
+                supportedPlatformRow("River", detail: "Auto-detected")
+                supportedPlatformRow("Any Other CSV", detail: "Manual column mapping")
             }
             .padding()
             .background(Theme.cardBackground)
@@ -131,7 +144,7 @@ struct CSVImportView: View {
         }
     }
 
-    private func supportedPlatformRow(_ name: String) -> some View {
+    private func supportedPlatformRow(_ name: String, detail: String = "") -> some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundColor(.green)
@@ -139,6 +152,12 @@ struct CSVImportView: View {
             Text(name)
                 .font(.subheadline)
                 .foregroundColor(Theme.textPrimary)
+            if !detail.isEmpty {
+                Spacer()
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundColor(Theme.textSecondary)
+            }
         }
     }
 
@@ -438,7 +457,20 @@ struct CSVImportView: View {
                 DuplicateInfo(date: $0.date, btcAmount: $0.btcAmount, usdSpent: $0.usdSpent)
             }
             let parsed = try CSVImportService.parseCSVContent(content, existingPurchases: dupInfos)
-            if parsed.purchases.isEmpty {
+            if parsed.purchases.isEmpty && parsed.platform == .unknown {
+                // Auto-detect failed - show column mapper
+                rawCSVContent = content
+                if let preview = CSVImportService.extractHeadersAndPreview(content) {
+                    csvHeaders = preview.headers
+                    csvPreviewRows = preview.preview
+                    showColumnMapper = true
+                    Haptics.tap()
+                } else {
+                    errorMessage = "Could not read column headers from this file."
+                    showError = true
+                    Haptics.error()
+                }
+            } else if parsed.purchases.isEmpty {
                 errorMessage = "No valid BTC purchases found in this file. Make sure it's a CSV exported from a supported exchange."
                 showError = true
                 Haptics.warning()
@@ -447,6 +479,31 @@ struct CSVImportView: View {
                 parsedPurchases = parsed.purchases
                 Haptics.confirm()
                 // Auto-deselect duplicates
+                for i in parsedPurchases.indices where parsedPurchases[i].isDuplicate {
+                    parsedPurchases[i].isSelected = false
+                }
+            }
+        } catch {
+            errorMessage = "Failed to parse CSV: \(error.localizedDescription)"
+            showError = true
+            Haptics.error()
+        }
+    }
+
+    private func handleMappedImport(_ mapping: ColumnMapping) {
+        do {
+            let dupInfos = existingPurchases.map {
+                DuplicateInfo(date: $0.date, btcAmount: $0.btcAmount, usdSpent: $0.usdSpent)
+            }
+            let parsed = try CSVImportService.parseWithMapping(rawCSVContent, mapping: mapping, existingPurchases: dupInfos)
+            if parsed.purchases.isEmpty {
+                errorMessage = "No valid transactions found with the selected column mapping. Check that the columns are correct."
+                showError = true
+                Haptics.warning()
+            } else {
+                importResult = parsed
+                parsedPurchases = parsed.purchases
+                Haptics.confirm()
                 for i in parsedPurchases.indices where parsedPurchases[i].isDuplicate {
                     parsedPurchases[i].isSelected = false
                 }

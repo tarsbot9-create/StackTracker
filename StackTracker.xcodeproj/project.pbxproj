@@ -26,6 +26,7 @@
 		A10017 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10017; };
 		A10018 /* CSVImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10018; };
 		A10019 /* CSVImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10019; };
+		A10099 /* ColumnMapperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10099; };
 		A10020 /* WatchedAddress.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10020; };
 		A10021 /* BlockchainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10021; };
 		A10022 /* AddressListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022; };
@@ -75,6 +76,7 @@
 		B10017 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10018 /* CSVImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImportService.swift; sourceTree = "<group>"; };
 		B10019 /* CSVImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImportView.swift; sourceTree = "<group>"; };
+		B10099 /* ColumnMapperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColumnMapperView.swift; sourceTree = "<group>"; };
 		B10020 /* WatchedAddress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedAddress.swift; sourceTree = "<group>"; };
 		B10021 /* BlockchainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockchainService.swift; sourceTree = "<group>"; };
 		B10022 /* AddressListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressListView.swift; sourceTree = "<group>"; };
@@ -288,6 +290,7 @@
 			isa = PBXGroup;
 			children = (
 				B10019 /* CSVImportView.swift */,
+				B10099 /* ColumnMapperView.swift */,
 			);
 			path = Import;
 			sourceTree = "<group>";
@@ -476,6 +479,7 @@
 				A10016 /* StatCard.swift in Sources */,
 				A10018 /* CSVImportService.swift in Sources */,
 				A10019 /* CSVImportView.swift in Sources */,
+				A10099 /* ColumnMapperView.swift in Sources */,
 				A10020 /* WatchedAddress.swift in Sources */,
 				A10021 /* BlockchainService.swift in Sources */,
 				A10022 /* AddressListView.swift in Sources */,
