@@ -49,8 +49,8 @@ struct PortfolioView: View {
         // Search
         if !searchText.isEmpty {
             let query = searchText.lowercased()
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateStyle = .medium
+            // Use shared cached formatter instead of creating one per keystroke
+            let dateFormatter = Formatters.dateFormatter
 
             result = result.filter { purchase in
                 if purchase.walletName.lowercased().contains(query) { return true }
