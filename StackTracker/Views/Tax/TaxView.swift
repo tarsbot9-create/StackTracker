@@ -97,9 +97,10 @@ struct TaxView: View {
             .sheet(isPresented: $showSellCalculator) {
                 SellCalculatorView()
             }
-            .sheet(isPresented: $showExportSheet) {
-                if let url = exportURL {
-                    ShareSheet(items: [url])
+            .onChange(of: showExportSheet) { _, show in
+                if show, let url = exportURL {
+                    presentShareSheet(url: url)
+                    showExportSheet = false
                 }
             }
         }
@@ -532,5 +533,24 @@ struct TaxView: View {
         } else {
             Haptics.error()
         }
+    }
+    private func presentShareSheet(url: URL) {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let root = scene.windows.first?.rootViewController else { return }
+
+        let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+
+        // Find the topmost presented controller
+        var topController = root
+        while let presented = topController.presentedViewController {
+            topController = presented
+        }
+
+        if let popover = activityVC.popoverPresentationController {
+            popover.sourceView = topController.view
+            popover.sourceRect = CGRect(x: topController.view.bounds.midX, y: topController.view.bounds.midY, width: 0, height: 0)
+        }
+
+        topController.present(activityVC, animated: true)
     }
 }
