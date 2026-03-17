@@ -138,6 +138,7 @@ struct DashboardView: View {
                             StatCard(
                                 title: "Total Invested",
                                 value: Formatters.formatUSD(summary.totalInvested),
+                                subtitle: "\(summary.purchaseCount) purchases",
                                 icon: "dollarsign.circle"
                             )
                         }
