@@ -92,6 +92,7 @@ struct AppRootView: View {
     @AppStorage("appearanceMode") private var appearanceMode = "dark"
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
+
     private var uiStyle: UIUserInterfaceStyle {
         switch appearanceMode {
         case "dark": return .dark

@@ -29,8 +29,7 @@ final class SubscriptionService: NSObject, ObservableObject {
             return
         }
 
-        // TODO: Replace with your RevenueCat API key
-        Purchases.configure(withAPIKey: "your_revenuecat_api_key_here")
+        Purchases.configure(withAPIKey: "appl_TvCYpGxAdpguJQxtcpTXgCDzZhg")
         Purchases.shared.delegate = self
 
         Task {
