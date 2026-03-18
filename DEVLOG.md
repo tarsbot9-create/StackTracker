@@ -508,3 +508,18 @@ Joey tested the app and provided UI/UX feedback. 10 commits, 2 TestFlight builds
 ### Build Status
 - **BUILD SUCCEEDED** - zero warnings, clean build
 - 1 commit pushed to main
+
+---
+
+## Session Log: March 18, 2026 (Overnight)
+
+### Performance: DateFormatter Caching (continued)
+1. **TaxExportService** - `generateForm8949CSV()` and `generateSummaryCSV()` each created a new DateFormatter on every call. Replaced with a shared static `exportDateFormatter` with `en_US_POSIX` locale (important for consistent date formatting regardless of user locale).
+2. **PriceService** - `historicalPrice(for:)` created a new DateFormatter on every call to format the CoinGecko API date parameter. Replaced with a static `historicalDateFormatter` with `en_US_POSIX` locale.
+
+### Code Quality: Portfolio Summary Deduplication
+3. **PortfolioView.portfolioSummaryCard** - Was manually calculating totalInvested, currentValue, totalPL, plPercent, avgCost, and isProfit inline - duplicating the exact same logic already in `PortfolioCalculator.summary()`. Replaced with a single call to the shared calculator. This ensures the Dashboard and Portfolio tabs always show identical numbers (previously, any bug fix in one place could leave the other inconsistent).
+
+### Build Status
+- **BUILD SUCCEEDED** - zero warnings, clean build
+- 1 commit pushed to main
