@@ -186,16 +186,14 @@ struct PortfolioView: View {
     // MARK: - Portfolio Summary Card
 
     private var portfolioSummaryCard: some View {
-        let buys = purchases.filter { $0.transactionType == .buy }
-        let totalInvested = buys.reduce(0.0) { $0 + $1.usdSpent }
-        let boughtBTC = buys.reduce(0.0) { $0 + $1.btcAmount }
-        let soldBTC = purchases.filter { $0.transactionType == .sell }.reduce(0.0) { $0 + $1.btcAmount }
-        let totalBTC = boughtBTC - soldBTC
-        let currentValue = totalBTC * priceService.currentPrice
-        let totalPL = currentValue - totalInvested
-        let plPercent = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0
-        let avgCost = boughtBTC > 0 ? totalInvested / boughtBTC : 0
-        let isProfit = totalPL >= 0
+        // Reuse PortfolioCalculator for consistent numbers across Dashboard and Portfolio
+        let s = PortfolioCalculator.summary(purchases: purchases, currentPrice: priceService.currentPrice)
+        let totalInvested = s.totalInvested
+        let currentValue = s.currentValue
+        let totalPL = s.totalPL
+        let plPercent = s.totalPLPercent
+        let avgCost = s.averageCostBasis
+        let isProfit = s.isProfit
 
         return HStack(spacing: 0) {
             // Left: invested vs value

@@ -2,6 +2,15 @@ import Foundation
 
 struct TaxExportService {
 
+    /// Cached DateFormatter for tax export dates (MM/dd/yyyy).
+    /// DateFormatters are expensive to create - reuse across all export calls.
+    private static let exportDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MM/dd/yyyy"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
+
     /// Generate a Form 8949-compatible CSV from disposal results
     /// Columns match IRS Form 8949 / TurboTax import format:
     /// Description, Date Acquired, Date Sold, Proceeds, Cost Basis, Gain/Loss, Holding Period
@@ -10,8 +19,7 @@ struct TaxExportService {
         year: Int? = nil
     ) -> String {
         let calendar = Calendar.current
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM/dd/yyyy"
+        let dateFormatter = exportDateFormatter
 
         var lines: [String] = []
 
@@ -50,8 +58,7 @@ struct TaxExportService {
         year: Int? = nil
     ) -> String {
         let calendar = Calendar.current
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM/dd/yyyy"
+        let dateFormatter = exportDateFormatter
 
         var lines: [String] = []
         lines.append("Date,Type,BTC Amount,Proceeds,Cost Basis,Short-Term Gain,Long-Term Gain,Net Gain")

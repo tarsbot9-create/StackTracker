@@ -95,10 +95,16 @@ final class PriceService: ObservableObject {
         }
     }
 
+    /// Cached DateFormatter for CoinGecko historical API date format (dd-MM-yyyy).
+    private static let historicalDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "dd-MM-yyyy"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
+
     func historicalPrice(for date: Date) async -> Double? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd-MM-yyyy"
-        let dateStr = formatter.string(from: date)
+        let dateStr = Self.historicalDateFormatter.string(from: date)
 
         // Cache: historical prices don't change, cache for 10 minutes
         if let cached = historicalCache[dateStr],
