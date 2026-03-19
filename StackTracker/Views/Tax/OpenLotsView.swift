@@ -18,54 +18,31 @@ struct OpenLotsView: View {
     }
 
     private var openLots: [OpenLot] {
-        let buys = purchases.filter { $0.transactionType == .buy }.sorted { $0.date < $1.date }
-        let disposals = purchases
-            .filter { $0.transactionType == .sell || $0.transactionType == .payment }
-            .sorted { $0.date < $1.date }
-            .map { Disposal(from: $0) }
-
-        var lots = buys.map { TaxLot(from: $0) }
-
-        // Replay all disposals using FIFO to find remaining lots
-        for disposal in disposals {
-            var remaining = disposal.btcAmount
-            while remaining > 0.00000001 {
-                guard let idx = lots.enumerated()
-                    .filter({ $0.element.remainingBTC > 0.00000001 })
-                    .min(by: { $0.element.date < $1.element.date })?.offset
-                else { break }
-                let consumed = min(remaining, lots[idx].remainingBTC)
-                lots[idx].remainingBTC -= consumed
-                remaining -= consumed
-            }
-        }
-
+        let lots = TaxLotEngine.remainingLots(purchases: purchases, method: .fifo)
         let now = Date()
         let calendar = Calendar.current
 
-        return lots
-            .filter { $0.remainingBTC > 0.00000001 }
-            .map { lot in
-                let holdingDays = calendar.dateComponents([.day], from: lot.date, to: now).day ?? 0
-                let isLongTerm = holdingDays > 365
-                let currentValue = lot.remainingBTC * priceService.currentPrice
-                let costBasis = lot.remainingBTC * lot.pricePerBTC
-                let gain = currentValue - costBasis
+        return lots.map { lot in
+            let holdingDays = calendar.dateComponents([.day], from: lot.date, to: now).day ?? 0
+            let isLongTerm = holdingDays > 365
+            let currentValue = lot.remainingBTC * priceService.currentPrice
+            let costBasis = lot.remainingBTC * lot.pricePerBTC
+            let gain = currentValue - costBasis
 
-                return OpenLot(
-                    id: lot.id,
-                    date: lot.date,
-                    remainingBTC: lot.remainingBTC,
-                    originalBTC: lot.originalBTC,
-                    pricePerBTC: lot.pricePerBTC,
-                    costBasis: costBasis,
-                    currentValue: currentValue,
-                    gain: gain,
-                    holdingDays: holdingDays,
-                    isLongTerm: isLongTerm,
-                    walletName: lot.walletName
-                )
-            }
+            return OpenLot(
+                id: lot.id,
+                date: lot.date,
+                remainingBTC: lot.remainingBTC,
+                originalBTC: lot.originalBTC,
+                pricePerBTC: lot.pricePerBTC,
+                costBasis: costBasis,
+                currentValue: currentValue,
+                gain: gain,
+                holdingDays: holdingDays,
+                isLongTerm: isLongTerm,
+                walletName: lot.walletName
+            )
+        }
     }
 
     private var sortedLots: [OpenLot] {
