@@ -14,7 +14,8 @@ struct MarketChartResponse: Codable {
 }
 
 struct PricePoint: Identifiable {
-    let id = UUID()
+    /// Use timestamp-based ID to avoid UUID allocation per chart point
+    var id: Double { date.timeIntervalSince1970 }
     let date: Date
     let price: Double
 }
@@ -29,10 +30,13 @@ final class PriceService: ObservableObject {
     @Published var isLoading = false
     @Published var lastError: String?
 
+    /// Currently loaded chart window (number of days)
+    private(set) var currentChartDays: Int = 30
+
     private let session: URLSession
     private var lastFetch: Date?
-    private var lastChartFetch: Date?
-    private var lastChartDays: Int?
+    /// Per-window chart cache so 30-day and 365-day don't overwrite each other
+    private var chartCache: [Int: (data: [PricePoint], fetched: Date)] = [:]
     private var historicalCache: [String: (price: Double, fetched: Date)] = [:]
 
     init() {
@@ -64,9 +68,12 @@ final class PriceService: ObservableObject {
     }
 
     func fetchChartData(days: Int = 30) async {
-        // Cache: don't re-fetch same chart within 60 seconds
-        if let last = lastChartFetch, lastChartDays == days,
-           Date().timeIntervalSince(last) < 60, !chartData.isEmpty {
+        // Check per-window cache: don't re-fetch same window within 60 seconds
+        if let cached = chartCache[days],
+           Date().timeIntervalSince(cached.fetched) < 60, !cached.data.isEmpty {
+            // Serve from cache without network call
+            self.chartData = cached.data
+            self.currentChartDays = days
             return
         }
 
@@ -80,15 +87,16 @@ final class PriceService: ObservableObject {
             let (data, _) = try await session.data(from: url)
             let response = try JSONDecoder().decode(MarketChartResponse.self, from: data)
             let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-            self.chartData = response.prices.compactMap { pair in
+            let points = response.prices.compactMap { pair in
                 let point = PricePoint(
                     date: Date(timeIntervalSince1970: pair[0] / 1000),
                     price: pair[1]
                 )
                 return point.date >= cutoff ? point : nil
             }
-            self.lastChartFetch = Date()
-            self.lastChartDays = days
+            self.chartData = points
+            self.currentChartDays = days
+            self.chartCache[days] = (data: points, fetched: Date())
             self.lastError = nil
         } catch {
             self.lastError = "Chart data unavailable"

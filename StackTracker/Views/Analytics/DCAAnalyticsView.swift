@@ -24,7 +24,7 @@ struct DCAAnalyticsView: View {
         purchases.filter { $0.transactionType == .buy }
     }
 
-    // Realized vs Unrealized
+    // Realized vs Unrealized (using shared TaxLotEngine)
     private var disposalResults: [DisposalResult] {
         TaxLotEngine.computeDisposals(purchases: purchases, method: .fifo)
     }
@@ -34,28 +34,10 @@ struct DCAAnalyticsView: View {
     }
 
     private var unrealizedGain: Double {
-        // Get remaining lots after all disposals
-        let buys = purchases.filter { $0.transactionType == .buy }.sorted { $0.date < $1.date }
-        let disposals = purchases.filter { $0.transactionType == .sell || $0.transactionType == .payment }.sorted { $0.date < $1.date }.map { Disposal(from: $0) }
-        var lots = buys.map { TaxLot(from: $0) }
-        // Replay disposals
-        for disposal in disposals {
-            replayDisposal(disposal, lots: &lots)
-        }
-        // Unrealized = current value of remaining lots - their cost basis
-        let remainingCostBasis = lots.reduce(0.0) { $0 + $1.remainingBTC * $1.pricePerBTC }
-        let remainingValue = lots.reduce(0.0) { $0 + $1.remainingBTC } * priceService.currentPrice
+        let openLots = TaxLotEngine.remainingLots(purchases: purchases, method: .fifo)
+        let remainingCostBasis = openLots.reduce(0.0) { $0 + $1.remainingBTC * $1.pricePerBTC }
+        let remainingValue = openLots.reduce(0.0) { $0 + $1.remainingBTC } * priceService.currentPrice
         return remainingValue - remainingCostBasis
-    }
-
-    private func replayDisposal(_ disposal: Disposal, lots: inout [TaxLot]) {
-        var remaining = disposal.btcAmount
-        while remaining > 0.00000001 {
-            guard let idx = lots.enumerated().filter({ $0.element.remainingBTC > 0.00000001 }).min(by: { $0.element.date < $1.element.date })?.offset else { break }
-            let consumed = min(remaining, lots[idx].remainingBTC)
-            lots[idx].remainingBTC -= consumed
-            remaining -= consumed
-        }
     }
 
     private var yearlyStacking: [(year: String, btc: Double, isCurrent: Bool)] {
@@ -383,70 +365,6 @@ struct DCAAnalyticsView: View {
         }
     }
 
-    // MARK: - Cost Basis Chart
-    private var costBasisChart: some View {
-        let allPrices = priceService.chartData.map(\.price) + costBasisData.map(\.costBasis)
-        let lo = allPrices.min() ?? 0
-        let hi = allPrices.max() ?? 1
-        let range = hi - lo
-        let padding = max(range * 0.15, 1000)
-
-        return Chart {
-            ForEach(priceService.chartData) { point in
-                LineMark(
-                    x: .value("Date", point.date),
-                    y: .value("Price", point.price),
-                    series: .value("Series", "BTC Price")
-                )
-                .foregroundStyle(Theme.bitcoinOrange)
-                .lineStyle(StrokeStyle(lineWidth: 2))
-
-                AreaMark(
-                    x: .value("Date", point.date),
-                    y: .value("Price", point.price)
-                )
-                .foregroundStyle(
-                    .linearGradient(
-                        colors: [Theme.bitcoinOrange.opacity(0.15), Theme.bitcoinOrange.opacity(0.0)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-            }
-
-            ForEach(Array(costBasisData.enumerated()), id: \.offset) { _, item in
-                LineMark(
-                    x: .value("Date", item.date),
-                    y: .value("Price", item.costBasis),
-                    series: .value("Series", "Cost Basis")
-                )
-                .foregroundStyle(Theme.profitGreen)
-                .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
-
-                PointMark(
-                    x: .value("Date", item.date),
-                    y: .value("Price", item.costBasis)
-                )
-                .foregroundStyle(Theme.profitGreen)
-                .symbolSize(20)
-            }
-        }
-        .chartYScale(domain: (lo - padding)...(hi + padding))
-        .chartPlotStyle { plot in plot.clipped() }
-        .chartYAxis {
-            AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { _ in
-                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Theme.cardBorder)
-                AxisValueLabel().foregroundStyle(Theme.textSecondary)
-            }
-        }
-        .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 4)) { _ in
-                AxisValueLabel().foregroundStyle(Theme.textSecondary)
-            }
-        }
-        .frame(height: 180)
-    }
-
     // MARK: - Yearly Stacking Chart
     private var yearlyStackingChart: some View {
         Chart(yearlyStacking, id: \.year) { item in
@@ -531,31 +449,4 @@ struct DCAAnalyticsView: View {
         .frame(height: 170)
     }
 
-    // MARK: - Purchase Performance Chart
-    private var purchasePerformanceChart: some View {
-        let buys = buyPurchases
-        return Chart(buys) { purchase in
-            let pl = priceService.currentPrice > 0 ? purchase.currentPL(priceService.currentPrice) : 0
-
-            BarMark(
-                x: .value("Date", purchase.date),
-                y: .value("P&L %", pl)
-            )
-            .foregroundStyle(pl >= 0 ? Theme.profitGreen : Theme.lossRed)
-            .cornerRadius(3)
-        }
-        .chartPlotStyle { plot in plot.clipped() }
-        .chartYAxis {
-            AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { _ in
-                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(Theme.cardBorder)
-                AxisValueLabel().foregroundStyle(Theme.textSecondary)
-            }
-        }
-        .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 4)) { _ in
-                AxisValueLabel().foregroundStyle(Theme.textSecondary)
-            }
-        }
-        .frame(height: 150)
-    }
 }

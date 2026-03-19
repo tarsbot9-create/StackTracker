@@ -291,6 +291,29 @@ struct TaxLotEngine {
         )
     }
 
+    /// Get remaining lots after replaying all disposals (useful for unrealized gain calculations)
+    static func remainingLots(
+        purchases: [Purchase],
+        method: AccountingMethod = .fifo
+    ) -> [TaxLot] {
+        let buys = purchases
+            .filter { $0.transactionType == .buy }
+            .sorted { $0.date < $1.date }
+
+        let disposals = purchases
+            .filter { $0.transactionType == .sell || $0.transactionType == .payment }
+            .sorted { $0.date < $1.date }
+            .map { Disposal(from: $0) }
+
+        var lots = buys.map { TaxLot(from: $0) }
+
+        for disposal in disposals {
+            _ = matchLots(disposal: disposal, lots: &lots, method: method)
+        }
+
+        return lots.filter { $0.remainingBTC > 0.00000001 }
+    }
+
     // MARK: - Private: Lot Matching
 
     /// Match a disposal against available lots, consuming BTC from lots
